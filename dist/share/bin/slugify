@@ -1,0 +1,61 @@
+#!/usr/bin/php -q
+<?php
+
+define('MAX_LOOPS', -1);
+
+/**
+ * Usage: slugify
+ *   <int:maxLength>
+ *   <str:inputString>
+ *   <str,dir:indexPath>
+ *   <char:specialChar>
+ *   <string:prefix:> (optional)
+ */
+
+$argv = (array) $_SERVER['argv'];
+
+if (count($argv) < 1 + 4) {
+	exit(1);
+}
+
+$maxLength = (integer) $argv[1];
+$inputString = $argv[2];
+$indexPath = $argv[3];
+$specialChar = substr($argv[4], 0, 1); //used for
+$prefix = isset($argv[5]) ? $argv[5] : null;
+
+if (!is_dir($indexPath)) {
+	exit(1);
+}
+
+function less($defaultSlug, $i, $specialChar, $maxLength) {
+	$i = (string) $i;
+	$slug = substr($defaultSlug, 0, $maxLength - (1 + strlen($i)));
+	$slug .= $specialChar.$i;
+	return $slug;
+}
+
+$defaultSlug = $inputString;
+if (function_exists('iconv')) {
+	$defaultSlug = iconv('utf-8', 'us-ascii//TRANSLIT', $defaultSlug);
+}
+
+$defaultSlug = strtolower($defaultSlug);
+$defaultSlug = preg_replace('/[^a-z0-9]/', null, $defaultSlug);
+
+$defaultSlug = $prefix.$defaultSlug;
+$defaultSlug = substr($defaultSlug, 0, $maxLength);
+
+$i = 0;
+$slug = $defaultSlug;
+while (file_exists($indexPath.'/'.$slug) && $i++ != MAX_LOOPS) {
+	$slug = less($defaultSlug, $i, $specialChar, $maxLength);
+}
+
+if ($i == MAX_LOOPS) {
+	// FUCL
+	exit(1);
+}
+
+echo $slug."\n";
+exit(0);

@@ -1,0 +1,13 @@
+#!/usr/bin/php -q
+<?php
+
+$argv = $_SERVER['argv'];
+if (
+	count($argv) >= 1 + 2
+	&& preg_match($argv[1], $argv[2])
+) {
+	echo "1\n";
+	exit(0);
+}
+
+exit(1);

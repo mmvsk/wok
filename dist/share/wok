@@ -1,0 +1,49 @@
+#!/bin/bash
+
+#-----------------------------------------------------------------------
+# Configuration
+#-----------------------------------------------------------------------
+
+wok_path=/usr/local/share/wok
+wok_config=/usr/local/etc/wok/config
+wok_repo=/var/local/lib/wok
+
+#-----------------------------------------------------------------------
+# ...
+#-----------------------------------------------------------------------
+
+# Stub
+#======
+
+export PATH=$PATH:$wok_path/bin
+
+. "$wok_config"
+for f in $wok_path/inc/*; do
+	. "$f"
+done
+
+# Parameters
+#============
+
+usage() {
+	test -n "$1" && echo -e "$1\n"
+	echo "Usage: wok <module>"
+	echo
+	echo "$(
+		cd $wok_path
+		ls -1 wok-* | sed 's/^wok-/    /' | sed 's/$/ [options]/'
+	)"
+	echo
+	exit 1
+}
+
+# Processing
+module="$1";shift
+
+# Validation
+test -z "$module" && usage
+test ! -f "$wok_path/wok-$module" && usage "Invalid module."
+
+# Run
+#=====
+. "$wok_path/wok-$module" $*
