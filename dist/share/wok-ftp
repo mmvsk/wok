@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# Stub
-#======
-
-for f in ~/wok/inc/*; do
-	source $f
-done
-
 repo=$wok_repo/ftp
 index_domain=$repo/.index/domain
 index_user=$repo/.index/user
@@ -22,7 +15,7 @@ test ! -d $repo \
 
 usage() {
 	test -n "$1" && echo -e "$1\n"
-	echo "Usage: wok-ftp <action>"
+	echo "Usage: wok ftp <action>"
 	echo
 	echo "    add [options] <domain>  Create the domain"
 	echo "        -p, --password <password>"

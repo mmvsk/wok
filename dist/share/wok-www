@@ -1,14 +1,5 @@
 #!/bin/bash
 
-# Stub
-#======
-
-echo $wok_www_path
-
-#for f in ~/wok/inc/*; do
-#	source $f
-#done
-
 repo=$wok_repo/www
 index_domain=$repo/.index/domain
 index_uid=$repo/.index/uid
@@ -24,7 +15,7 @@ test ! -d $repo \
 
 usage() {
 	test -n "$1" && echo -e "$1\n"
-	echo "Usage: wok-www <action>"
+	echo "Usage: wok www <action>"
 	echo
 	echo "    add <domain>           Create the domain"
 	echo "    rm <domain> [options]  Remove the domain"

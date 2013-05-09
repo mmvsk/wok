@@ -17,7 +17,6 @@ install:
 	@chmod -R o=,g= /usr/local/etc/wok
 	@chmod -R o= /var/local/lib/wok
 	@ln -sf /usr/local/share/wok/wok /usr/local/sbin/wok
-	@$${EDITOR:-vi} /usr/local/etc/wok/config
 	@echo "done."
 
 uninstall:
@@ -33,4 +32,12 @@ uninstall:
 	@test ! -f /usr/local/sbin/wok || rm -f /usr/local/sbin/wok
 	@echo "done."
 
-.PHONY: default install uninstall
+configure:
+	@test -d /usr/local/share/wok \
+		|| test -d /usr/local/etc/wok \
+		|| test -d /var/local/lib/wok \
+		|| test -f /usr/local/sbin/wok \
+		|| (echo "Wok is not installed on this system" >&2; exit 1)
+	@$${EDITOR:-vi} /usr/local/etc/wok/config
+
+.PHONY: default install uninstall configure

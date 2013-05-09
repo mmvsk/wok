@@ -1,18 +1,11 @@
 #!/bin/bash
 
-# Stub
-#======
-
-for f in ~/wok/inc/*; do
-	source $f
-done
-
 # Parameters
 #============
 
 usage() {
 	test -n "$1" && echo -e "$1\n"
-	echo "Usage: wok-add [options] <domain>"
+	echo "Usage: wok add [options] <domain>"
 	echo
 	echo "    -p, --password <password>  set the global password (used in every submodule)"
 	echo
@@ -52,13 +45,14 @@ test -n "$password" && args="$args --password $password"
 test "$force" && args="$args --force"
 
 $wok_path/wok-www add $domain $args
-$wok_path/wok-apache add $domain $args
+$wok_path/wok-php add $domain $args
+$wok_path/wok-nginx add $domain $args
 confirm "Create SSL self-signed certificate/key?" && $wok_path/wok-ssl add $domain $args
-confirm "Create FTP access?" && $wok_path/wok-ftp add $domain $args
+#confirm "Create FTP access?" && $wok_path/wok-ftp add $domain $args
 confirm "Create PostgreSQL user and database?" && $wok_path/wok-pgsql add $domain $args
 confirm "Create MySQL user and database?" && $wok_path/wok-mysql add $domain $args
 confirm "Create MongoDB user and database?" && $wok_path/wok-mongo add $domain $args
-confirm "Create a mail domain?" && $wok_path/wok-mail add $domain $args
+#confirm "Create a mail domain?" && $wok_path/wok-mail add $domain $args
 
 report=$(mktemp)
 echo    "Wok recipe: $domain" >> $report
@@ -108,7 +102,7 @@ fi
 
 if confirm "Send report by e-mail?"; then
 	read -ep "E-mail address (separate by coma): " mail_rcpt
-	mail -s "Wok recipe: $domain" -r $wok_add_mail_sender "$mail_rcpt" < $report
+	mailx -s "Wok recipe: $domain" -r $wok_add_mail_sender "$mail_rcpt" < $report
 fi
 
 rm $report
