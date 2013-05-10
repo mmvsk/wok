@@ -85,18 +85,18 @@ class FilePool implements IPool
 		if (! is_readable($path)) {
 			error("File {$path} is not readable");
 		}
-		$this->file = fopen($fileHandle);
+		$this->fileHandle = fopen($path, 'r');
 	}
 
 	public function __destruct()
 	{
-		fclose($this->file);
+		fclose($this->fileHandle);
 	}
 
 	public function has($string)
 	{
-		fseek($fileHandle, 0, SEEK_SET);
-		while (false !== $buf = fgets($fileHandle)) {
+		fseek($this->fileHandle, 0, SEEK_SET);
+		while (false !== $buf = fgets($this->fileHandle)) {
 			$buf = strtok($buf, "\r\n");
 			if ($buf === $string) {
 				return true;
@@ -233,10 +233,10 @@ $pool      = ($argc >= 5) ? (string) $argv[4] : null;
 if (! is_null($pool)) {
 	if ($pool === '-') {
 		$pool = ArrayPool::fromFile(STDIN);
-	} elseif (is_dir($pool)) {
-		$pool = new DirectoryPool($pool);
 	} elseif (is_file($pool)) {
 		$pool = new FilePool($pool);
+	} elseif (is_dir($pool)) {
+		$pool = new DirectoryPool($pool);
 	} else {
 		error('Invalid pool');
 	}

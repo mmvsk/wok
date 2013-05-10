@@ -122,25 +122,25 @@ assert_equals "formatting"           "mixedcase"        "MiXedCASE"
 assert_equals "cleaning"             "helloworld"       "hello, world\!"
 assert_equals "combined operations"  "www_bonjourtousl" "Bonjour, tous les héros \!" 16          "www_"
 
-#<assert_fn>             <description>                     <pool_path>       <expectation>      <string>            [maxLength] [prefix] [pool]
-assert_equals_withInput  "input pool, new"                 "$inputPool_path" "www_googlecom"    "google.com"        16          "www_"   -
-assert_equals_withInput  "input pool, append"              "$inputPool_path" "www_exampleorg1"  "example.org"       16          "www_"   -
-assert_equals_withInput  "input pool, replace last"        "$inputPool_path" "www_jurassicpar1" "jurassic-park.com" 16          "www_"   -
-assert_equals_withInput  "input pool, replace last two #1" "$inputPool_path" "www_iexampleor10" "i.example.org"     16          "www_"   -
-assert_equals_withInput  "input pool, replace last two #2" "$inputPool_path" "www_iexampleor10" "i.example.org"     16          "www_"   -
+#<assert_fn>             <description>                         <pool_path>       <expectation>      <string>            [maxLength] [prefix] [pool]
+assert_equals_withInput  "the input pool, new"                 "$inputPool_path" "www_googlecom"    "google.com"        16          "www_"   -
+assert_equals_withInput  "the input pool, append"              "$inputPool_path" "www_exampleorg1"  "example.org"       16          "www_"   -
+assert_equals_withInput  "the input pool, replace last"        "$inputPool_path" "www_jurassicpar1" "jurassic-park.com" 16          "www_"   -
+assert_equals_withInput  "the input pool, replace last two #1" "$inputPool_path" "www_iexampleor10" "i.example.org"     16          "www_"   -
+assert_equals_withInput  "the input pool, replace last two #2" "$inputPool_path" "www_iexampleor10" "i.example.org"     16          "www_"   -
 
-#<assert_fn>  <description>                    <expectation>      <string>            [maxLength] [prefix] [pool]
-assert_equals "file pool, new"                 "www_googlecom"    "google.com"        16          "www_"   "$filePool_path"
-assert_equals "file pool, append"              "www_exampleorg1"  "example.org"       16          "www_"   "$filePool_path"
-assert_equals "file pool, replace last"        "www_jurassicpar1" "jurassic-park.com" 16          "www_"   "$filePool_path"
-assert_equals "file pool, replace last two #1" "www_iexampleor10" "i.example.org"     16          "www_"   "$filePool_path"
-assert_equals "file pool, replace last two #2" "www_iexampleor10" "i.example.org"     16          "www_"   "$filePool_path"
+#<assert_fn>  <description>                        <expectation>      <string>            [maxLength] [prefix] [pool]
+assert_equals "the file pool, new"                 "www_googlecom"    "google.com"        16          "www_"   "$filePool_path"
+assert_equals "the file pool, append"              "www_exampleorg1"  "example.org"       16          "www_"   "$filePool_path"
+assert_equals "the file pool, replace last"        "www_jurassicpar1" "jurassic-park.com" 16          "www_"   "$filePool_path"
+assert_equals "the file pool, replace last two #1" "www_iexampleor10" "i.example.org"     16          "www_"   "$filePool_path"
+assert_equals "the file pool, replace last two #2" "www_iexampleor10" "i.example.org"     16          "www_"   "$filePool_path"
 
-#<assert_fn>  <description>                         <expectation>      <string>            [maxLength] [prefix] [pool]
-assert_equals "directory pool, new"                 "www_googlecom"    "google.com"        16          "www_"   "$dirPool_path"
-assert_equals "directory pool, append"              "www_exampleorg1"  "example.org"       16          "www_"   "$dirPool_path"
-assert_equals "directory pool, replace last"        "www_jurassicpar1" "jurassic-park.com" 16          "www_"   "$dirPool_path"
-assert_equals "directory pool, replace last two #1" "www_iexampleor10" "i.example.org"     16          "www_"   "$dirPool_path"
-assert_equals "directory pool, replace last two #2" "www_iexampleor10" "i.example.org"     16          "www_"   "$dirPool_path"
+#<assert_fn>  <description>                             <expectation>      <string>            [maxLength] [prefix] [pool]
+assert_equals "the directory pool, new"                 "www_googlecom"    "google.com"        16          "www_"   "$dirPool_path"
+assert_equals "the directory pool, append"              "www_exampleorg1"  "example.org"       16          "www_"   "$dirPool_path"
+assert_equals "the directory pool, replace last"        "www_jurassicpar1" "jurassic-park.com" 16          "www_"   "$dirPool_path"
+assert_equals "the directory pool, replace last two #1" "www_iexampleor10" "i.example.org"     16          "www_"   "$dirPool_path"
+assert_equals "the directory pool, replace last two #2" "www_iexampleor10" "i.example.org"     16          "www_"   "$dirPool_path"
 
 pool_clean
