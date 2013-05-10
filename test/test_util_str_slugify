@@ -1,0 +1,146 @@
+#!/bin/bash
+
+#
+# Copyright © 2013 Max Ruman
+#
+# This file is part of Wok.
+#
+# Wok is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# Wok is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with Wok. If not, see <http://www.gnu.org/licenses/>.
+#
+
+E_INVALID_USAGE=1
+E_TEST_FAILED=2
+
+
+if [[ -n "$1" ]]; then
+	bin="$1"
+else
+	bin="$(dirname "$(dirname "${BASH_SOURCE[0]}")")/dist/util/str_slugify"
+fi
+
+if [[ ! -x "$bin" ]]; then
+	echo "Target ${bin} does not exist or is not executable" >&2
+	exit $E_INVALID_USAGE
+fi
+
+pool_init()
+{
+	local pool_contents="$@"
+
+	inputPool_path="$(mktemp)"
+	filePool_path="$(mktemp)"
+	dirPool_path="$(mktemp -d)"
+
+	for str in $pool_contents; do
+		echo "$str" >> "$inputPool_path"
+		echo "$str" >> "$filePool_path"
+		touch "${dirPool_path}/${str}"
+	done
+}
+
+pool_clean()
+{
+	rm "$inputPool_path"
+	rm "$filePool_path"
+	rm -r "$dirPool_path"
+}
+
+assert_false()
+{
+	local descr="$1"
+	shift
+
+	echo -n "Testing ${descr}: "
+	if ! "$bin" "$@" >/dev/null 2>/dev/null; then
+		echo "OK"
+	else
+		echo -e "\033[0;31mfailed!\033[0m"
+		pool_clean
+		exit $E_TEST_FAILED
+	fi
+}
+
+assert_equals()
+{
+	local descr="$1"
+	local expect="$2"
+	shift 2
+
+	echo -n "Testing ${descr}: "
+	if result="$("$bin" "$@" 2>/dev/null)" && [[ "$result" == "$expect" ]]; then
+		echo "OK"
+	else
+		echo -e "\033[0;31mfailed!\033[0m"
+		pool_clean
+		exit $E_TEST_FAILED
+	fi
+}
+
+assert_equals_withInput()
+{
+	local descr="$1"
+	local input_path="$2"
+	local expect="$3"
+	shift 3
+
+	echo -n "Testing ${descr}: "
+	if result="$("$bin" "$@" <"$input_path" 2>/dev/null)" && [[ "$result" == "$expect" ]]; then
+		echo "OK"
+	else
+		echo -e "\033[0;31mfailed!\033[0m"
+		pool_clean
+		exit $E_TEST_FAILED
+	fi
+}
+
+pool_init "$(echo \
+	www_exampleorg \
+	www_jurassicpark \
+	www_iexampleorg www_iexampleorg{1..9} \
+	www_thelostworl{1..9} www_thelostwor{10..16} \
+)"
+
+#<assert_fn>  <description>          <expectation>      <string>                     [maxLength] [prefix] [pool]
+assert_equals "valid slug"           "hello"            "hello"
+assert_equals "prefixing"            "www_hello"        "hello"                      0           "www_"
+assert_equals "resizing"             "abracada"         "abracadabra"                8
+assert_equals "resizing with prefix" "www_abra"         "abracadabra"                8           "www_"
+assert_false  "error handling"       ""                 ""                           4           "12345"
+assert_equals "transliteration"      "meme"             "mémé"
+assert_equals "formatting"           "mixedcase"        "MiXedCASE"
+assert_equals "cleaning"             "helloworld"       "hello, world\!"
+assert_equals "combined operations"  "www_bonjourtousl" "Bonjour, tous les héros \!" 16          "www_"
+
+#<assert_fn>             <description>                     <pool_path>       <expectation>      <string>            [maxLength] [prefix] [pool]
+assert_equals_withInput  "input pool, new"                 "$inputPool_path" "www_googlecom"    "google.com"        16          "www_"   -
+assert_equals_withInput  "input pool, append"              "$inputPool_path" "www_exampleorg1"  "example.org"       16          "www_"   -
+assert_equals_withInput  "input pool, replace last"        "$inputPool_path" "www_jurassicpar1" "jurassic-park.com" 16          "www_"   -
+assert_equals_withInput  "input pool, replace last two #1" "$inputPool_path" "www_iexampleor10" "i.example.org"     16          "www_"   -
+assert_equals_withInput  "input pool, replace last two #2" "$inputPool_path" "www_iexampleor10" "i.example.org"     16          "www_"   -
+
+#<assert_fn>  <description>                    <expectation>      <string>            [maxLength] [prefix] [pool]
+assert_equals "file pool, new"                 "www_googlecom"    "google.com"        16          "www_"   "$filePool_path"
+assert_equals "file pool, append"              "www_exampleorg1"  "example.org"       16          "www_"   "$filePool_path"
+assert_equals "file pool, replace last"        "www_jurassicpar1" "jurassic-park.com" 16          "www_"   "$filePool_path"
+assert_equals "file pool, replace last two #1" "www_iexampleor10" "i.example.org"     16          "www_"   "$filePool_path"
+assert_equals "file pool, replace last two #2" "www_iexampleor10" "i.example.org"     16          "www_"   "$filePool_path"
+
+#<assert_fn>  <description>                         <expectation>      <string>            [maxLength] [prefix] [pool]
+assert_equals "directory pool, new"                 "www_googlecom"    "google.com"        16          "www_"   "$dirPool_path"
+assert_equals "directory pool, append"              "www_exampleorg1"  "example.org"       16          "www_"   "$dirPool_path"
+assert_equals "directory pool, replace last"        "www_jurassicpar1" "jurassic-park.com" 16          "www_"   "$dirPool_path"
+assert_equals "directory pool, replace last two #1" "www_iexampleor10" "i.example.org"     16          "www_"   "$dirPool_path"
+assert_equals "directory pool, replace last two #2" "www_iexampleor10" "i.example.org"     16          "www_"   "$dirPool_path"
+
+pool_clean

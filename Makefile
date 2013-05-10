@@ -1,7 +1,51 @@
+
+#
+# Copyright © 2013 Max Ruman
+#
+# This file is part of Wok.
+#
+# Wok is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# Wok is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with Wok. If not, see <http://www.gnu.org/licenses/>.
+#
+
+#TODO: build <with sharedir=,etcdir=,...>, config, test, install,
+#TODO: (...) hostconfig, uninstall
+
+#-----------------------------------------------------------------------
+# Configuration
+#-----------------------------------------------------------------------
+
 SHELL=sh
 
-default:
-	@echo -e "To install Wok, run: \033[0;33mmake install\033[0m"
+#-----------------------------------------------------------------------
+# Commands
+#-----------------------------------------------------------------------
+
+default: dist
+
+dist: util wok modules
+
+test: dist
+	@for f in $(wildcard test/*); do \
+		name=`basename "$$f"`; \
+		echo "*** $${name}"; \
+		"$$f" || exit; \
+		echo; \
+	done
+	@echo "All tests passed successfully!"
+
+clean:
+	-rm -rf dist/*
 
 install:
 	@true || (echo echo "Fuck" >&2; exit 1)
@@ -32,7 +76,7 @@ uninstall:
 	@test ! -f /usr/local/sbin/wok || rm -f /usr/local/sbin/wok
 	@echo "done."
 
-configure:
+config:
 	@test -d /usr/local/share/wok \
 		|| test -d /usr/local/etc/wok \
 		|| test -d /var/local/lib/wok \
@@ -40,4 +84,40 @@ configure:
 		|| (echo "Wok is not installed on this system" >&2; exit 1)
 	@$${EDITOR:-vi} /usr/local/etc/wok/config
 
-.PHONY: default install uninstall configure
+hostconfig:
+
+.PHONY: default dist test clean install uninstall config hostconfig
+
+#-----------------------------------------------------------------------
+# Targets
+#-----------------------------------------------------------------------
+
+util: \
+dist/util \
+dist/util/str_match \
+dist/util/str_slugify
+
+wok:
+
+modules:
+
+.PHONY: util wok modules
+
+#-----------------------------------------------------------------------
+# Rules
+#-----------------------------------------------------------------------
+
+# $@: target
+# $*: target basename
+# $<: first dep
+# $^: all deps
+# $?: more recent deps
+
+dist/util:
+	mkdir -p "$@"
+
+dist/util/str_match: src/util/str_match.php
+	(echo '#!/usr/bin/php'; cat "$<") >"$@" && chmod +x "$@"
+
+dist/util/str_slugify: src/util/str_slugify.php
+	(echo '#!/usr/bin/php'; cat "$<") >"$@" && chmod +x "$@"

@@ -1,0 +1,76 @@
+#!/bin/bash
+
+#
+# Copyright © 2013 Max Ruman
+#
+# This file is part of Wok.
+#
+# Wok is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# Wok is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with Wok. If not, see <http://www.gnu.org/licenses/>.
+#
+
+E_INVALID_USAGE=1
+E_TEST_FAILED=2
+
+if [[ -n "$1" ]]; then
+	bin="$1"
+else
+	bin="$(dirname "$(dirname "${BASH_SOURCE[0]}")")/dist/util/str_match"
+fi
+
+if [[ ! -x "$bin" ]]; then
+	echo "Target ${bin} does not exist or is not executable" >&2
+	exit $E_INVALID_USAGE
+fi
+
+assert_true()
+{
+	local descr="$1"
+	shift
+
+	echo -n "Testing ${descr}: "
+	if "$bin" "$@" >/dev/null 2>/dev/null; then
+		echo "OK"
+	else
+		echo -e "\033[0;31mfailed!\033[0m"
+		exit $E_TEST_FAILED
+	fi
+}
+
+assert_false()
+{
+	local descr="$1"
+	shift
+
+	echo -n "Testing ${descr}: "
+	if ! "$bin" "$@" >/dev/null 2>/dev/null; then
+		echo "OK"
+	else
+		echo -e "\033[0;31mfailed!\033[0m"
+		exit $E_TEST_FAILED
+	fi
+}
+
+assert_true  "full match"                '/^Amy$/'       'Amy'
+assert_true  "beginning match"           '/^Sa/'         'Sarah'
+assert_true  "end match"                 '/oe$/'         'Joe'
+assert_true  "partial match"             '/oh/'          'John'
+assert_false "mistmatch"                 '/nonexistant/' 'A string'
+assert_false "case sensitivity"          '/aaa/'         'AAA'
+assert_true  "case sensitivity modifier" '/aaa/i'        'AAA'
+assert_true  "alternative delimiter #1"  ':hello:'       'hello'
+assert_true  "alternative delimiter #2"  '`hello`'       'hello'
+assert_true  "alternative delimiter #3"  '#hello#'       'hello'
+assert_true  "advanced regex" \
+	'`^https?://(www\.)?[a-z0-9-]+.(com|net|org)(/(\w+(\?([a-z][a-z0-9]*(\[\])?=[\w\d.\-+%]+&?)*)?)?)?$`' \
+	'http://www.example.org/search?q=George+Bush&cat[]=cars&cat[]=girls&resultset=4'
