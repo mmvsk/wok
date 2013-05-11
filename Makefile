@@ -18,24 +18,42 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
-#TODO: build <with sharedir=,etcdir=,...>, config, test, install,
-#TODO: (...) hostconfig, uninstall
-
 #-----------------------------------------------------------------------
 # Configuration
 #-----------------------------------------------------------------------
 
-SHELL=sh
+#
+# Used to configure Wok.
+#
+# Example: make install wok_path=/usr/share/wok \
+#                       sbin_path=/usr/sbin/wok \
+#                       conf_path=/etc/wok \
+#                       repo_path=/var/lib/wok
+#
+wok_path  = /usr/local/share/wok
+sbin_path = /usr/local/sbin/wok
+conf_path = /usr/local/etc/wok/wok.ini
+repo_path = /var/local/lib/wok
+
+# Don't change!
+SHELL = sh
+
+modules     = $(basename $(notdir $(wildcard src/modules/*.bash)))
+modules_src = $(wildcard src/modules/*.bash)
+modules_ini = $(wildcard src/modules/*.ini)
+common_src  = $(wildcard src/common/*.bash)
 
 #-----------------------------------------------------------------------
 # Commands
 #-----------------------------------------------------------------------
 
-default: dist
+default: wok
 
-dist: util wok modules
+check:
+	@echo list: $(modules)
+	@echo src:  $(modules_src)
 
-test: dist
+test: wok
 	@for f in $(wildcard test/*); do \
 		name=`basename "$$f"`; \
 		echo "*** $${name}"; \
@@ -47,36 +65,31 @@ test: dist
 clean:
 	-rm -rf dist/*
 
-install:
-	@true || (echo echo "Fuck" >&2; exit 1)
-	@test `id -u` -eq 0 || (echo "Wok must be installed as root" >&2; exit 1)
-	@test ! -d /usr/local/share/wok || (echo "Is Wok already installed?" >&2; exit 1)
-	@test ! -d /usr/local/etc/wok || (echo "Is Wok already installed?" >&2; exit 1)
-	@test ! -d /var/local/lib/wok || (echo "Is Wok already installed?" >&2; exit 1)
-	@echo -n "Installing Wok..."
-	@mkdir -p /usr/local/share/wok /usr/local/etc/wok /var/local/lib/wok
-	@cp -r dist/share/* /usr/local/share/wok
-	@cp -r dist/etc/* /usr/local/etc/wok
-	@cp -r dist/repo/* /var/local/lib/wok
-	@chmod -R o=,g= /usr/local/etc/wok
-	@chmod -R o= /var/local/lib/wok
-	@ln -sf /usr/local/share/wok/wok /usr/local/sbin/wok
-	@echo "done."
+install: wok
+	@./install.sh \
+		--install \
+		--wok-path="$(wok_path)" \
+		--sbin-path="$(sbin_path)" \
+		--conf-path="$(conf_path)" \
+		--repo-path="$(repo_path)"
 
 uninstall:
-	@test -d /usr/local/share/wok \
-		|| test -d /usr/local/etc/wok \
-		|| test -d /var/local/lib/wok \
-		|| test -f /usr/local/sbin/wok \
-		|| (echo "Wok is not installed on this system" >&2; exit 1)
-	@echo -n "Uninstalling..."
-	@test ! -d /usr/local/share/wok || rm -rf /usr/local/share/wok
-	@test ! -d /usr/local/etc/wok || rm -rf /usr/local/etc/wok
-	@test ! -d /var/local/lib/wok || rm -rf /var/local/lib/wok
-	@test ! -f /usr/local/sbin/wok || rm -f /usr/local/sbin/wok
-	@echo "done."
+	@./install.sh \
+		--uninstall \
+		--wok-path="$(wok_path)" \
+		--sbin-path="$(sbin_path)" \
+		--conf-path="$(conf_path)" \
+		--repo-path="$(repo_path)"
 
-config:
+purge:
+	@./install.sh \
+		--purge \
+		--wok-path="$(wok_path)" \
+		--sbin-path="$(sbin_path)" \
+		--conf-path="$(conf_path)" \
+		--repo-path="$(repo_path)"
+
+hostconfig:
 	@test -d /usr/local/share/wok \
 		|| test -d /usr/local/etc/wok \
 		|| test -d /var/local/lib/wok \
@@ -84,25 +97,27 @@ config:
 		|| (echo "Wok is not installed on this system" >&2; exit 1)
 	@$${EDITOR:-vi} /usr/local/etc/wok/config
 
-hostconfig:
-
-.PHONY: default dist test clean install uninstall config hostconfig
+.PHONY: default test clean install uninstall purge hostconfig
 
 #-----------------------------------------------------------------------
 # Targets
 #-----------------------------------------------------------------------
 
-util: \
-dist/util \
-dist/util/str_match \
-dist/util/str_slugify \
-dist/util/ini_get
+wok: \
+dist/wok \
+dist/wok/wok \
+dist/wok/util \
+dist/wok/util/str_match \
+dist/wok/util/str_slugify \
+dist/wok/util/ini_get \
+dist/repo \
+dist/conf \
+dist/conf/wok.ini \
+dist/modules \
+\
 
-wok:
 
-modules:
-
-.PHONY: util wok modules
+.PHONY: wok
 
 #-----------------------------------------------------------------------
 # Rules
@@ -114,14 +129,35 @@ modules:
 # $^: all deps
 # $?: more recent deps
 
-dist/util:
+dist/wok dist/wok/util dist/conf dist/modules:
 	mkdir -p "$@"
 
-dist/util/str_match: src/util/str_match.php
-	(echo '#!/usr/bin/php'; cat "$<") >"$@" && chmod +x "$@"
+dist/repo:
+	mkdir -p "$@"
 
-dist/util/str_slugify: src/util/str_slugify.php
-	(echo '#!/usr/bin/php'; cat "$<") >"$@" && chmod +x "$@"
+dist/wok/util/str_match: src/util/str_match.php
+	(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
 
-dist/util/ini_get: src/util/ini_get.php
-	(echo '#!/usr/bin/php'; cat "$<") >"$@" && chmod +x "$@"
+dist/wok/util/str_slugify: src/util/str_slugify.php
+	(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
+
+dist/wok/util/ini_get: src/util/ini_get.php
+	(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
+
+dist/conf/wok.ini: src/wok.ini $(modules_ini)
+	cp src/wok.ini "$@"
+	$(foreach path,$(modules_ini),cat $(path) >>"$@";)
+
+dist/wok/wok: src/*.bash $(common_src) $(modules_src)
+	(echo "#!/bin/bash"; cat src/wok.bash) >"$@" && chmod +x "$@"
+	sed -i 's/{{wok_module_list}}/$(foreach module,$(modules),"$(module)")/g' "$@"
+	sed -i 's:{{wok_config_file}}:"$(conf_path)":g' "$@"
+	sed -i 's:{{wok_repo_path}}:"$(repo_path)":g' "$@"
+	sed -i 's:{{wok_util_path}}:"$(wok_path)/util":g' "$@"
+	sed -i "/{{modules_src}}/{`printf '$(foreach path,$(modules_src),r $(path)\n)d'`}" "$@"
+	sed -i "/{{common_src}}/{`printf '$(foreach path,$(common_src),r $(path)\n)d'`}" "$@"
+	sed -i "/{{wok_config_src}}/{`printf 'r src/wok_config.bash\nd'`}" "$@"
+	sed -i "/{{wok_repo_src}}/{`printf 'r src/wok_repo.bash\nd'`}" "$@"
+	sed -i '22,$${/^#/d;}' "$@"
+	#sed -i '22,$${/^$$/d;}' "$@"
+	#sed -i 's/^\s\+//g' "$@"

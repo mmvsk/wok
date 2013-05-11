@@ -22,46 +22,133 @@
 # Configuration
 #-----------------------------------------------------------------------
 
-wok_path=/usr/local/share/wok
-wok_config=/usr/local/etc/wok/wok.ini
-wok_repo=/var/local/lib/wok
+wok_module_list=({{wok_module_list}})
+wok_config_file={{wok_config_file}}
+wok_repo_path={{wok_repo_path}}
+wok_util_path={{wok_util_path}}
 
 #-----------------------------------------------------------------------
-# ...
+# Global definitions
 #-----------------------------------------------------------------------
 
-# Stub
-#======
+EXIT_SUCCESS=0
+EXIT_SYSTEM_ERROR=-1
+EXIT_USER_ERROR=1
 
-export PATH=$PATH:$wok_path/bin
+# Allow cleaning
+wok_exit_callbacks=()
 
-. "$wok_config"
-for f in $wok_path/inc/*; do
-	. "$f"
-done
+#-----------------------------------------------------------------------
+# Initialization
+#-----------------------------------------------------------------------
 
-# Parameters
-#============
+# Wok utilities have a higher priority than system commands
+export PATH="${wok_util_path}:${PATH}"
 
-usage() {
-	test -n "$1" && echo -e "$1\n"
-	echo "Usage: wok <module>"
-	echo
-	echo "$(
-		cd $wok_path
-		ls -1 wok-* | sed 's/^wok-/    /' | sed 's/$/ [options]/'
-	)"
-	echo
-	exit 1
+#-----------------------------------------------------------------------
+# Modules source
+#-----------------------------------------------------------------------
+
+{{modules_src}}
+
+#-----------------------------------------------------------------------
+# Common functions source
+#-----------------------------------------------------------------------
+
+{{common_src}}
+
+#-----------------------------------------------------------------------
+# Wok config source
+#-----------------------------------------------------------------------
+
+{{wok_config_src}}
+
+#-----------------------------------------------------------------------
+# Wok repo source
+#-----------------------------------------------------------------------
+
+{{wok_repo_src}}
+
+#-----------------------------------------------------------------------
+# Wok handler source
+#-----------------------------------------------------------------------
+
+wok_exit()
+{
+	local exit_status=$1
+	local message="$2"
+	local callback
+
+	for callback in "${wok_exit_callbacks[@]}"; do
+		"$callback" $exit_status
+	done
+
+	[[ -n $message ]] && echo "$message" >&2
+
+	exit $exit_status
 }
 
-# Processing
-module="$1";shift
+wok_printUsage()
+{
+	local module
 
-# Validation
-test -z "$module" && usage
-test ! -f "$wok_path/wok-$module" && usage "Invalid module."
+	echo "Usage: wok <module> [...]"
+	echo
+	for module in "${wok_module_list[@]}"; do
+		module="$(echo "$module" | sed 's/_/ /g')"
+		echo "    ${module}"
+	done
+	echo
+}
 
-# Run
-#=====
-. "$wok_path/wok-$module" $*
+wok_hasModule()
+{
+	local module="$1"
+	local availModule
+
+	for availModule in "${wok_module_list[@]}"; do
+		[[ $module == $availModule ]] && return 0
+	done
+	return 1
+}
+
+wok_handle()
+{
+	local cmd="$1"
+	local module="$(echo $1 | sed -e 's/[ \-]/_/g')"
+	shift
+
+	if [[ -z "$cmd" ]]; then
+		wok_printUsage >&2
+		wok_exit $EXIT_USER_ERROR
+	fi
+
+	if wok_hasModule "$module"; then
+		wok_handle_module "$cmd" "$@"
+		wok_exit $EXIT_SUCCESS
+	fi
+
+	wok_printUsage >&2
+	wok_exit $EXIT_USER_ERROR
+}
+
+wok_handle_module()
+{
+	local module="$1"
+	shift
+	local handler="wok_${module}_handle"
+	local param="$@"
+
+	if ! wok_hasModule "$module"; then
+		echo "Invalid module: ${module}" >&2
+		wok_exit $EXIT_USER_ERROR
+	fi
+
+	"$handler" "${param[@]}" || wok_exit $EXIT_SYSTEM_ERROR "Module error"
+}
+
+#-----------------------------------------------------------------------
+# Wok Execution
+#-----------------------------------------------------------------------
+
+wok_handle "$@"

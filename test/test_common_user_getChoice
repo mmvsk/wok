@@ -73,11 +73,12 @@ assert_choice_equals()
 	local expect="$2"
 	local inp="$3"
 	shift 3
+	local choices=("$@")
 	local choice
 
 	echo -n "Testing ${descr}: "
 	pipe_fill "$inp"
-	"$bin" choice "$@" <"$pipe" >/dev/null 2>/dev/null
+	"$bin" choice "${choices[@]}" <"$pipe" >/dev/null 2>/dev/null
 	if [[ $choice == $expect ]]; then
 		echo "OK"
 	else
@@ -94,11 +95,12 @@ assert_choice_nequals()
 	local expect="$2"
 	local inp="$3"
 	shift 3
+	local choices=("$@")
 	local choice
 
 	echo -n "Testing ${descr}: "
 	pipe_fill "$inp"
-	"$bin" choice "$@" <"$pipe" >/dev/null 2>/dev/null
+	"$bin" choice "${choices[@]}" <"$pipe" >/dev/null 2>/dev/null
 	if [[ $choice != $expect ]]; then
 		echo "OK"
 	else

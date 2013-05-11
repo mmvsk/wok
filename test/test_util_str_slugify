@@ -25,7 +25,7 @@ E_TEST_FAILED=2
 if [[ -n $1 ]]; then
 	bin="$1"
 else
-	bin="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/dist/util/str_slugify"
+	bin="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/dist/wok/util/str_slugify"
 fi
 
 if [[ ! -x $bin ]]; then
@@ -35,13 +35,13 @@ fi
 
 pool_init()
 {
-	local pool_contents="$@"
+	local pool_contents=("$@")
 
 	inputPool_path="$(mktemp)"
 	filePool_path="$(mktemp)"
 	dirPool_path="$(mktemp -d)"
 
-	for str in $pool_contents; do
+	for str in "${pool_contents[@]}"; do
 		echo "$str" >> "$inputPool_path"
 		echo "$str" >> "$filePool_path"
 		touch "${dirPool_path}/${str}"
@@ -66,9 +66,10 @@ assert_fails()
 {
 	local descr="$1"
 	shift
+	local param=("$@")
 
 	echo -n "Testing ${descr}: "
-	if ! "$bin" "$@" >/dev/null 2>/dev/null; then
+	if ! "$bin" "${param[@]}" >/dev/null 2>/dev/null; then
 		echo "OK"
 	else
 		test_fail
@@ -80,9 +81,10 @@ assert_equals()
 	local descr="$1"
 	local expect="$(echo -e "$2")"
 	shift 2
+	local param=("$@")
 
 	echo -n "Testing ${descr}: "
-	if result="$("$bin" "$@" 2>/dev/null)" && [[ $result == $expect ]]; then
+	if result="$("$bin" "${param[@]}" 2>/dev/null)" && [[ $result == $expect ]]; then
 		echo "OK"
 	else
 		test_fail
@@ -95,21 +97,21 @@ assert_equals_withInput()
 	local input_path="$2"
 	local expect="$(echo -e "$3")"
 	shift 3
+	local param=("$@")
 
 	echo -n "Testing ${descr}: "
-	if result="$("$bin" "$@" <"$input_path")" && [[ $result == $expect ]]; then
+	if result="$("$bin" "${param[@]}" <"$input_path")" && [[ $result == $expect ]]; then
 		echo "OK"
 	else
 		test_fail
 	fi
 }
 
-pool_init "$(echo \
+pool_init \
 	www_exampleorg \
 	www_jurassicpark \
 	www_iexampleorg www_iexampleorg{1..9} \
-	www_thelostworld www_thelostworl{1..9} www_thelostwor{10..16} \
-)"
+	www_thelostworld www_thelostworl{1..9} www_thelostwor{10..16}
 
 #<assert_fn>  <description>          <expectation>      <string>                     [maxLength] [prefix] [pool]
 assert_equals "valid slug"           "hello"            "hello"

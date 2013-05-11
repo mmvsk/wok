@@ -51,7 +51,7 @@ assert_succeed()
 	cmd=("$@")
 
 	echo -n "Testing ${descr}: "
-	if "$bin" "$msg" "$cmd" >/dev/null 2>/dev/null; then
+	if "$bin" "$msg" "${cmd[@]}" >/dev/null 2>/dev/null; then
 		echo "OK"
 	else
 		test_fail
@@ -66,7 +66,7 @@ assert_fails()
 	cmd=("$@")
 
 	echo -n "Testing ${descr}: "
-	if ! "$bin" "$msg" "$cmd" >/dev/null 2>/dev/null; then
+	if ! "$bin" "$msg" "${cmd[@]}" >/dev/null 2>/dev/null; then
 		echo "OK"
 	else
 		test_fail
@@ -83,7 +83,7 @@ assert_stdout_equals()
 	local buf
 
 	echo -n "Testing ${descr}: "
-	if [[ "$("$bin" "$msg" "$cmd")" == "$(echo -e "$expect")" ]]; then
+	if [[ "$("$bin" "$msg" "${cmd[@]}")" == "$(echo -e "$expect")" ]]; then
 		echo "OK"
 	else
 		test_fail

@@ -26,7 +26,7 @@ E_SYSTEM_ERROR=3
 if [[ -n "$1" ]]; then
 	bin="$1"
 else
-	bin="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/dist/util/ini_get"
+	bin="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/dist/wok/util/ini_get"
 fi
 
 if [[ ! -x "$bin" ]]; then
@@ -38,11 +38,13 @@ ini_file=
 
 ini_init()
 {
+	local contents=("$@")
+
 	if ! ini_file="$(mktemp)"; then
 		echo "Could not create a temporary file" >&2
 		exit $E_SYSTEM_ERROR
 	fi
-	echo -e "$@" >"$ini_file"
+	echo -e "${contents[@]}" >"$ini_file"
 }
 
 ini_clean()
