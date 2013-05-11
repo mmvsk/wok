@@ -23,7 +23,7 @@
  * Usage: $0 <string> <maxLength> <prefix> {-|<pool_dir>|<pool_file>}
  */
 
-define('POOL_MAXLOOPS', 11);
+define('POOL_MAXLOOPS', -1);
 
 function error($msg = null, $status = 1)
 {

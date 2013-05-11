@@ -43,7 +43,7 @@ test_fail()
 	exit $E_TEST_FAILED
 }
 
-assert_true()
+assert_succeed()
 {
 	local descr="$1"
 	local msg="$2"
@@ -58,7 +58,7 @@ assert_true()
 	fi
 }
 
-assert_false()
+assert_fails()
 {
 	local descr="$1"
 	local msg="$2"
@@ -91,8 +91,8 @@ assert_stdout_equals()
 }
 
 #<assert_fn>         <description> <expectation>                           <message>    <command>
-assert_true          "success"                                             "Processing" true
-assert_false         "failure"                                             "Processing" false
+assert_succeed       "success"                                             "Processing" true
+assert_fails         "failure"                                             "Processing" false
 assert_stdout_equals "success UI"  "Processing...done."                    "Processing" true
 assert_stdout_equals "failure UI"  "Processing...\033[0;31mfailed!\033[0m" "Processing" false
 assert_stdout_equals "verbosity"   "Processing...done."                    "Processing" echo "Some text that should NOT be printed"

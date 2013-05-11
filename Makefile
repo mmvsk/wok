@@ -95,7 +95,8 @@ hostconfig:
 util: \
 dist/util \
 dist/util/str_match \
-dist/util/str_slugify
+dist/util/str_slugify \
+dist/util/ini_get
 
 wok:
 
@@ -120,4 +121,7 @@ dist/util/str_match: src/util/str_match.php
 	(echo '#!/usr/bin/php'; cat "$<") >"$@" && chmod +x "$@"
 
 dist/util/str_slugify: src/util/str_slugify.php
+	(echo '#!/usr/bin/php'; cat "$<") >"$@" && chmod +x "$@"
+
+dist/util/ini_get: src/util/ini_get.php
 	(echo '#!/usr/bin/php'; cat "$<") >"$@" && chmod +x "$@"

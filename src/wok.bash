@@ -22,9 +22,8 @@
 # Configuration
 #-----------------------------------------------------------------------
 
-wok_bin="$0"
 wok_path=/usr/local/share/wok
-wok_config=/usr/local/etc/wok/config
+wok_config=/usr/local/etc/wok/wok.ini
 wok_repo=/var/local/lib/wok
 
 #-----------------------------------------------------------------------

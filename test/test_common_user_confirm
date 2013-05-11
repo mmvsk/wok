@@ -65,21 +65,6 @@ assert_false()
 	fi
 }
 
-assert_equals()
-{
-	local descr="$1"
-	local expect="$2"
-	local resp="$3"
-
-	echo -n "Testing ${descr}: "
-	if result="$(echo -e "$resp" | "$bin" >/dev/null 2>/dev/null)" && [[ $result == $expect ]]; then
-		echo "OK"
-	else
-		echo -e "\033[0;31mfailed!\033[0m"
-		exit $E_TEST_FAILED
-	fi
-}
-
 assert_true  "confirmation (lowercase)" "y"
 assert_true  "confirmation (uppercase)" "Y"
 assert_true  "confirmation (phrase)"    "yes, why not\!"
