@@ -35,6 +35,8 @@ sbin_path = /usr/local/sbin/wok
 conf_path = /usr/local/etc/wok/wok.ini
 repo_path = /var/local/lib/wok
 
+shitify = 1
+
 # Don't change!
 SHELL = sh
 
@@ -159,5 +161,7 @@ dist/wok/wok: src/*.bash $(common_src) $(modules_src)
 	sed -i "/{{wok_config_src}}/{`printf 'r src/wok_config.bash\nd'`}" "$@"
 	sed -i "/{{wok_repo_src}}/{`printf 'r src/wok_repo.bash\nd'`}" "$@"
 	sed -i '22,$${/^#/d;}' "$@"
-	#sed -i '22,$${/^$$/d;}' "$@"
-	#sed -i 's/^\s\+//g' "$@"
+ifeq ($(shitify), 1)
+	sed -i '22,$${/^$$/d;}' "$@"
+	sed -i 's/^\s\+//g' "$@"
+endif
