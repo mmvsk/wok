@@ -22,13 +22,13 @@
 E_INVALID_USAGE=1
 E_TEST_FAILED=2
 
-if [[ -n "$1" ]]; then
+if [[ -n $1 ]]; then
 	bin="$1"
 else
-	bin="$(dirname "$(dirname "${BASH_SOURCE[0]}")")/dist/util/str_match"
+	bin="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/dist/util/str_match"
 fi
 
-if [[ ! -x "$bin" ]]; then
+if [[ ! -x $bin ]]; then
 	echo "Target ${bin} does not exist or is not executable" >&2
 	exit $E_INVALID_USAGE
 fi

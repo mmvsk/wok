@@ -1,0 +1,138 @@
+#!/bin/bash
+
+#
+# Copyright © 2013 Max Ruman
+#
+# This file is part of Wok.
+#
+# Wok is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# Wok is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with Wok. If not, see <http://www.gnu.org/licenses/>.
+#
+
+E_INVALID_USAGE=1
+E_TEST_FAILED=2
+
+if [[ -n $1 ]]; then
+	inc="$1"
+else
+	inc="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/src/common/user_getChoice.bash"
+fi
+
+if [[ ! -f "$inc" ]]; then
+	echo "Source file ${inc} does not exist" >&2
+	exit $E_INVALID_USAGE
+fi
+
+. "$inc"
+
+bin="user_getChoice"
+pipe=
+
+pipe_new()
+{
+	local pipe="$(mktemp -u)"
+	local pipe_ok
+
+	if ! mkfifo -m 600 "$pipe"; then
+		return 1
+	fi
+
+	echo "$pipe"
+}
+
+pipe_init()
+{
+	while ! pipe="$(pipe_new)"; do
+		echo -n >/dev/null
+	done
+}
+
+pipe_fill()
+{
+	echo -e "$1" >"$pipe" &
+}
+
+pipe_clean()
+{
+	rm "$pipe"
+}
+
+assert_choice_equals()
+{
+	local descr="$1"
+	local expect="$2"
+	local inp="$3"
+	shift 3
+	local choice
+
+	echo -n "Testing ${descr}: "
+	pipe_fill "$inp"
+	"$bin" choice "$@" <"$pipe" >/dev/null 2>/dev/null
+	if [[ $choice == $expect ]]; then
+		echo "OK"
+	else
+		#echo "Expected: $expect"
+		#echo "Result: $choice"
+		echo -e "\033[0;31mfailed!\033[0m"
+		exit $E_TEST_FAILED
+	fi
+}
+
+assert_choice_nequals()
+{
+	local descr="$1"
+	local expect="$2"
+	local inp="$3"
+	shift 3
+	local choice
+
+	echo -n "Testing ${descr}: "
+	pipe_fill "$inp"
+	"$bin" choice "$@" <"$pipe" >/dev/null 2>/dev/null
+	if [[ $choice != $expect ]]; then
+		echo "OK"
+	else
+		echo -e "\033[0;31mfailed!\033[0m"
+		exit $E_TEST_FAILED
+	fi
+}
+
+assert_stdout_contains()
+{
+	local descr="$1"
+	local message="$2"
+	local choice
+
+	echo -n "Testing ${descr}: "
+	pipe_fill 1
+	if "$bin" -m "$message" choice "first" "second" "third" <"$pipe" | grep -qF "$(echo -e "$message")"; then
+		echo "OK"
+	else
+		echo -e "\033[0;31mfailed!\033[0m"
+		exit $E_TEST_FAILED
+	fi
+}
+
+pipe_init
+
+assert_choice_equals  "choice #1"         1 1      "first" "second" "third"
+assert_choice_nequals "choice #1 not 2"   2 1      "first" "second" "third"
+assert_choice_nequals "choice #1 not 3"   3 1      "first" "second" "third"
+assert_choice_equals  "choice #2"         2 2      "first" "second" "third"
+assert_choice_equals  "choice #3"         3 3      "first" "second" "third"
+assert_choice_equals  "choice repeat 0,2" 2 "0\n2" "first" "second" "third"
+assert_choice_equals  "choice repeat 6,1" 1 "6\n1" "first" "second" "third"
+
+assert_stdout_contains "message printing"  "This is a descriptive message..."
+
+pipe_clean

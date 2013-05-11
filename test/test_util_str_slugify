@@ -22,11 +22,10 @@
 E_INVALID_USAGE=1
 E_TEST_FAILED=2
 
-
 if [[ -n "$1" ]]; then
 	bin="$1"
 else
-	bin="$(dirname "$(dirname "${BASH_SOURCE[0]}")")/dist/util/str_slugify"
+	bin="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/dist/util/str_slugify"
 fi
 
 if [[ ! -x "$bin" ]]; then
@@ -56,6 +55,13 @@ pool_clean()
 	rm -r "$dirPool_path"
 }
 
+test_fail()
+{
+	echo -e "\033[0;31mfailed!\033[0m"
+	pool_clean
+	exit $E_TEST_FAILED
+}
+
 assert_false()
 {
 	local descr="$1"
@@ -65,9 +71,7 @@ assert_false()
 	if ! "$bin" "$@" >/dev/null 2>/dev/null; then
 		echo "OK"
 	else
-		echo -e "\033[0;31mfailed!\033[0m"
-		pool_clean
-		exit $E_TEST_FAILED
+		test_fail
 	fi
 }
 
@@ -81,9 +85,7 @@ assert_equals()
 	if result="$("$bin" "$@" 2>/dev/null)" && [[ "$result" == "$expect" ]]; then
 		echo "OK"
 	else
-		echo -e "\033[0;31mfailed!\033[0m"
-		pool_clean
-		exit $E_TEST_FAILED
+		test_fail
 	fi
 }
 
@@ -98,9 +100,7 @@ assert_equals_withInput()
 	if result="$("$bin" "$@" <"$input_path" 2>/dev/null)" && [[ "$result" == "$expect" ]]; then
 		echo "OK"
 	else
-		echo -e "\033[0;31mfailed!\033[0m"
-		pool_clean
-		exit $E_TEST_FAILED
+		test_fail
 	fi
 }
 
