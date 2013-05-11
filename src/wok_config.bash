@@ -23,5 +23,7 @@ wok_config_get()
 	local section="$1"
 	local key="$2"
 
-	ini_get "$wok_config_file" $section" $key" || wok_exit $EXIT_SYSTEM_ERROR
+	if ! ini_get "$wok_config_file" $section" $key" 2>/dev/null; then
+		wok_exit $EXIT_SYSTEM_ERROR
+	fi
 }

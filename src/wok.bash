@@ -58,14 +58,12 @@ export PATH="${wok_util_path}:${PATH}"
 {{common_src}}
 
 #-----------------------------------------------------------------------
-# Wok config source
+# Wok source
 #-----------------------------------------------------------------------
+
+{{wok_module_src}}
 
 {{wok_config_src}}
-
-#-----------------------------------------------------------------------
-# Wok repo source
-#-----------------------------------------------------------------------
 
 {{wok_repo_src}}
 
@@ -88,7 +86,7 @@ wok_exit()
 	exit $exit_status
 }
 
-wok_printUsage()
+wok_usage()
 {
 	local module
 
@@ -101,17 +99,6 @@ wok_printUsage()
 	echo
 }
 
-wok_hasModule()
-{
-	local module="$1"
-	local availModule
-
-	for availModule in "${wok_module_list[@]}"; do
-		[[ $module == $availModule ]] && return 0
-	done
-	return 1
-}
-
 wok_handle()
 {
 	local cmd="$1"
@@ -119,32 +106,17 @@ wok_handle()
 	shift
 
 	if [[ -z "$cmd" ]]; then
-		wok_printUsage >&2
+		wok_usage >&2
 		wok_exit $EXIT_USER_ERROR
 	fi
 
-	if wok_hasModule "$module"; then
-		wok_handle_module "$cmd" "$@"
+	if wok_module_has "$module"; then
+		wok_module_handle "$cmd" "$@"
 		wok_exit $EXIT_SUCCESS
 	fi
 
-	wok_printUsage >&2
+	wok_usage >&2
 	wok_exit $EXIT_USER_ERROR
-}
-
-wok_handle_module()
-{
-	local module="$1"
-	shift
-	local handler="wok_${module}_handle"
-	local param="$@"
-
-	if ! wok_hasModule "$module"; then
-		echo "Invalid module: ${module}" >&2
-		wok_exit $EXIT_USER_ERROR
-	fi
-
-	"$handler" "${param[@]}" || wok_exit $EXIT_SYSTEM_ERROR "Module error"
 }
 
 #-----------------------------------------------------------------------

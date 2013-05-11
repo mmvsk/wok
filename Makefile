@@ -107,17 +107,14 @@ hostconfig:
 
 wok: \
 dist/wok \
+dist/repo \
+dist/conf \
 dist/wok/wok \
+dist/conf/wok.ini \
 dist/wok/util \
 dist/wok/util/str_match \
 dist/wok/util/str_slugify \
-dist/wok/util/ini_get \
-dist/repo \
-dist/conf \
-dist/conf/wok.ini \
-dist/modules \
-\
-
+dist/wok/util/ini_get
 
 .PHONY: wok
 
@@ -158,6 +155,7 @@ dist/wok/wok: src/*.bash $(common_src) $(modules_src)
 	sed -i 's:{{wok_util_path}}:"$(wok_path)/util":g' "$@"
 	sed -i "/{{modules_src}}/{`printf '$(foreach path,$(modules_src),r $(path)\n)d'`}" "$@"
 	sed -i "/{{common_src}}/{`printf '$(foreach path,$(common_src),r $(path)\n)d'`}" "$@"
+	sed -i "/{{wok_module_src}}/{`printf 'r src/wok_module.bash\nd'`}" "$@"
 	sed -i "/{{wok_config_src}}/{`printf 'r src/wok_config.bash\nd'`}" "$@"
 	sed -i "/{{wok_repo_src}}/{`printf 'r src/wok_repo.bash\nd'`}" "$@"
 	sed -i '22,$${/^#/d;}' "$@"
