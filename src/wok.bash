@@ -101,14 +101,31 @@ wok_usage()
 
 wok_handle()
 {
-	local cmd="$1"
 	local module="$(echo $1 | sed -e 's/[ \-]/_/g')"
-	shift
 
-	if [[ -z "$cmd" ]]; then
+	if [[ -z "$*" ]]; then
 		wok_usage >&2
 		wok_exit $EXIT_USER_ERROR
 	fi
+
+	for arg in "$@"; do
+
+		case "$arg" in
+			-*=*) value=`echo "$arg" | sed -e 's/[-_a-zA-Z0-9]*=//'` ;;
+			*) value="" ;;
+		esac
+
+		case "$arg" in
+			-h|--help)     wok_usage; exit 0;;
+			--install)     action=install;;
+			--uninstall)   action=uninstall;;
+			--purge)       action=purge;;
+			--wok-path=*)  wok_path="$value";;
+			--sbin-path=*) sbin_path="$value";;
+			--conf-path=*) conf_path="$value";;
+			--repo-path=*) repo_path="$value";;
+		esac
+	done
 
 	if wok_module_has "$module"; then
 		wok_module_handle "$cmd" "$@"

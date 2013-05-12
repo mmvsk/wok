@@ -73,6 +73,7 @@ for arg in "$@"; do
 		--sbin-path=*) sbin_path="$value";;
 		--conf-path=*) conf_path="$value";;
 		--repo-path=*) repo_path="$value";;
+		*) echo "Unknown argument '$arg'" >&2; exit 1;;
 	esac
 done
 
