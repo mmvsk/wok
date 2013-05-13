@@ -106,7 +106,7 @@ wok_pusage()
 	local module_descr
 	local psep
 
-	echo "Usage: ${wok_command} [--help] [--version] <command|module> [<args>]"
+	echo "Usage: ${wok_command} [--help|-h] [--version|-v] <command|module> [<args>]"
 	echo
 	echo "Commands:"
 	echo

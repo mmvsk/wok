@@ -65,7 +65,9 @@ test: wok
 	@echo "All tests passed successfully!"
 
 clean:
-	-rm -rf dist/*
+	@echo -n "Cleaning..."
+	@-rm -rf dist/*
+	@echo "done."
 
 install: wok
 	@./install.sh \
@@ -129,38 +131,52 @@ dist/wok/util/ini_get
 # $?: more recent deps
 
 dist/wok dist/wok/util dist/conf dist/modules:
-	mkdir -p "$@"
+	@echo -n "Creating directory $@..."
+	@mkdir -p "$@"
+	@echo "done."
 
 dist/repo:
-	mkdir -p "$@"
+	@echo -n "Creating directory $@..."
+	@mkdir -p "$@"
+	@echo "done."
 
 dist/wok/util/str_match: src/util/str_match.php
-	(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
+	@echo -n "Building $@..."
+	@(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
+	@echo "done."
 
 dist/wok/util/str_slugify: src/util/str_slugify.php
-	(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
+	@echo -n "Building $@..."
+	@(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
+	@echo "done."
 
 dist/wok/util/ini_get: src/util/ini_get.php
-	(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
+	@echo -n "Building $@..."
+	@(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
+	@echo "done."
 
 dist/conf/wok.ini: src/wok.ini $(modules_ini)
-	cp src/wok.ini "$@"
-	$(foreach path,$(modules_ini),cat $(path) >>"$@";)
+	@echo -n "Assembling $@..."
+	@cp src/wok.ini "$@"
+	@$(foreach path,$(modules_ini),cat $(path) >>"$@";)
+	@echo "done."
 
 dist/wok/wok: src/*.bash $(common_src) $(modules_src)
-	(echo "#!/bin/bash"; cat src/wok.bash) >"$@" && chmod +x "$@"
-	sed -i 's/{{wok_module_list}}/$(foreach module,$(modules),"$(module)")/g' "$@"
-	sed -i 's:{{wok_config_file}}:"$(conf_path)":g' "$@"
-	sed -i 's:{{wok_repo_path}}:"$(repo_path)":g' "$@"
-	sed -i 's:{{wok_util_path}}:"$(wok_path)/util":g' "$@"
-	sed -i "/{{modules_src}}/{`printf '$(foreach path,$(modules_src),r $(path)\n)d'`}" "$@"
-	sed -i "/{{common_src}}/{`printf '$(foreach path,$(common_src),r $(path)\n)d'`}" "$@"
-	sed -i "/{{wok_module_src}}/{`printf 'r src/wok_module.bash\nd'`}" "$@"
-	sed -i "/{{wok_config_src}}/{`printf 'r src/wok_config.bash\nd'`}" "$@"
-	sed -i "/{{wok_repo_src}}/{`printf 'r src/wok_repo.bash\nd'`}" "$@"
-	sed -i "/{{wok_domain_src}}/{`printf 'r src/wok_domain.bash\nd'`}" "$@"
-	sed -i '22,$${/^#/d;}' "$@"
+	@echo -n "Building $@..."
+	@(echo "#!/bin/bash"; cat src/wok.bash) >"$@" && chmod +x "$@"
+	@sed -i 's/{{wok_module_list}}/$(foreach module,$(modules),"$(module)")/g' "$@"
+	@sed -i 's:{{wok_config_file}}:"$(conf_path)":g' "$@"
+	@sed -i 's:{{wok_repo_path}}:"$(repo_path)":g' "$@"
+	@sed -i 's:{{wok_util_path}}:"$(wok_path)/util":g' "$@"
+	@sed -i "/{{modules_src}}/{`printf '$(foreach path,$(modules_src),r $(path)\n)d'`}" "$@"
+	@sed -i "/{{common_src}}/{`printf '$(foreach path,$(common_src),r $(path)\n)d'`}" "$@"
+	@sed -i "/{{wok_module_src}}/{`printf 'r src/wok_module.bash\nd'`}" "$@"
+	@sed -i "/{{wok_config_src}}/{`printf 'r src/wok_config.bash\nd'`}" "$@"
+	@sed -i "/{{wok_repo_src}}/{`printf 'r src/wok_repo.bash\nd'`}" "$@"
+	@sed -i "/{{wok_domain_src}}/{`printf 'r src/wok_domain.bash\nd'`}" "$@"
+	@sed -i '22,$${/^#/d;}' "$@"
 ifeq ($(shitify), 1)
-	sed -i '22,$${/^$$/d;}' "$@"
-	sed -i 's/^\s\+//g' "$@"
+	@sed -i '22,$${/^$$/d;}' "$@"
+	@sed -i 's/^\s\+//g' "$@"
 endif
+	@echo "done."

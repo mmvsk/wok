@@ -60,8 +60,8 @@ purge()
 for arg in "$@"; do
 
 	case "$arg" in
-		-*=*) value=`echo "$arg" | sed -e 's/[-_a-zA-Z0-9]*=//'` ;;
-		*) value="" ;;
+		-*=*) argval=`echo "$arg" | sed -e 's/[-_a-zA-Z0-9]*=//'` ;;
+		*) argval="" ;;
 	esac
 
 	case "$arg" in
@@ -69,10 +69,10 @@ for arg in "$@"; do
 		--install)     action=install;;
 		--uninstall)   action=uninstall;;
 		--purge)       action=purge;;
-		--wok-path=*)  wok_path="$value";;
-		--sbin-path=*) sbin_path="$value";;
-		--conf-path=*) conf_path="$value";;
-		--repo-path=*) repo_path="$value";;
+		--wok-path=*)  wok_path="$argval";;
+		--sbin-path=*) sbin_path="$argval";;
+		--conf-path=*) conf_path="$argval";;
+		--repo-path=*) repo_path="$argval";;
 		*) echo "Unknown argument '$arg'" >&2; exit 1;;
 	esac
 done
