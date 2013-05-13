@@ -158,6 +158,7 @@ dist/wok/wok: src/*.bash $(common_src) $(modules_src)
 	sed -i "/{{wok_module_src}}/{`printf 'r src/wok_module.bash\nd'`}" "$@"
 	sed -i "/{{wok_config_src}}/{`printf 'r src/wok_config.bash\nd'`}" "$@"
 	sed -i "/{{wok_repo_src}}/{`printf 'r src/wok_repo.bash\nd'`}" "$@"
+	sed -i "/{{wok_domain_src}}/{`printf 'r src/wok_domain.bash\nd'`}" "$@"
 	sed -i '22,$${/^#/d;}' "$@"
 ifeq ($(shitify), 1)
 	sed -i '22,$${/^$$/d;}' "$@"

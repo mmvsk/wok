@@ -18,3 +18,28 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
+# TODO USE INI_GET, INI_SET
+#
+# /index/
+#   <module>/
+#     domain.list
+#     uid.list
+#
+# /lessources.be.ini
+# /lesmachins.be.ini
+#
+
+
+wok_repo_has()
+{
+	local domain="$1"
+}
+
+wok_repo_index_has()
+{
+	local module="$1"
+	local section="$2"
+	local token="$3"
+}
+
+

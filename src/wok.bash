@@ -31,9 +31,14 @@ wok_util_path={{wok_util_path}}
 # Global definitions
 #-----------------------------------------------------------------------
 
+wok_name="Wok"
+wok_version="0.3.0"
+wok_command="$(basename ${0})"
+
+# Exit statuses
 EXIT_SUCCESS=0
-EXIT_SYSTEM_ERROR=-1
-EXIT_USER_ERROR=1
+EXIT_ERROR_SYSTEM=-1
+EXIT_ERROR_USER=1
 
 # Allow cleaning
 wok_exit_callbacks=()
@@ -67,8 +72,10 @@ export PATH="${wok_util_path}:${PATH}"
 
 {{wok_repo_src}}
 
+{{wok_domain_src}}
+
 #-----------------------------------------------------------------------
-# Wok handler source
+# Wok control
 #-----------------------------------------------------------------------
 
 wok_exit()
@@ -81,59 +88,121 @@ wok_exit()
 		"$callback" $exit_status
 	done
 
-	[[ -n $message ]] && echo "$message" >&2
+	[[ -n $message ]] && wok_perror "$message"
 
 	exit $exit_status
 }
 
-wok_usage()
+wok_perror()
+{
+	local message="$1"
+
+	echo "$message" >&2
+}
+
+wok_pusage()
 {
 	local module
+	local module_descr
+	local psep
 
-	echo "Usage: wok <module> [...]"
+	echo "Usage: ${wok_command} [--help] [--version] <command|module> [<args>]"
+	echo
+	echo "Commands:"
+	echo
+	echo "    list        List registered domains"
+	echo "    add         Add a domain"
+	echo "    remove      Remove a domain"
+	echo "    help <command|module>"
+	echo "                Help about a command or a module"
+	echo
+	echo "Modules: "
 	echo
 	for module in "${wok_module_list[@]}"; do
-		module="$(echo "$module" | sed 's/_/ /g')"
-		echo "    ${module}"
+		module="$(echo "$module" | sed 's/_/-/g')"
+		module_descr="$(wok_module_describe "$module")"
+		if [[ ${#module} -lt 12 ]]; then
+			psep="$(printf ' %.0s' $(seq $((12 - ${#module}))))"
+		else
+			psep="$(printf "\n                ")"
+		fi
+		echo "    ${module}${psep}${module_descr}"
 	done
 	echo
 }
 
 wok_handle()
 {
-	local module="$(echo $1 | sed -e 's/[ \-]/_/g')"
+	local arg
+	local arg_value
+	local module
 
 	if [[ -z "$*" ]]; then
-		wok_usage >&2
-		wok_exit $EXIT_USER_ERROR
+		wok_pusage
+		wok_exit $EXIT_ERROR_USER
 	fi
 
 	for arg in "$@"; do
+		arg_value="$(arg_parseValue "$arg")"
 
 		case "$arg" in
-			-*=*) value=`echo "$arg" | sed -e 's/[-_a-zA-Z0-9]*=//'` ;;
-			*) value="" ;;
-		esac
 
-		case "$arg" in
-			-h|--help)     wok_usage; exit 0;;
-			--install)     action=install;;
-			--uninstall)   action=uninstall;;
-			--purge)       action=purge;;
-			--wok-path=*)  wok_path="$value";;
-			--sbin-path=*) sbin_path="$value";;
-			--conf-path=*) conf_path="$value";;
-			--repo-path=*) repo_path="$value";;
+			-h|--help)
+				wok_pusage
+				wok_exit $EXIT_SUCCESS;;
+
+			-v|--version)
+				echo "${wok_name} version ${wok_version}"
+				wok_exit $EXIT_SUCCESS;;
+
+			help)
+				shift
+				if [[ -z "$1" ]]; then
+					wok_perror "Invalid usage of 'help'."
+					wok_exit $EXIT_ERROR_USER
+				fi
+				case "$1" in
+					add)       wok_add    --help; wok_exit $EXIT_SUCCESS;;
+					rm|remove) wok_remove --help; wok_exit $EXIT_SUCCESS;;
+					ls|list)   wok_list   --help; wok_exit $EXIT_SUCCESS;;
+					*)
+						if [[ -n "$1" ]] && wok_module_has "$1"; then
+							wok_module_handle "$1" --help
+							wok_exit $EXIT_SUCCESS
+						fi;;
+				esac
+				wok_perror "No available help for '$1'."
+				wok_exit $EXIT_ERROR_USER;;
+
+			add)
+				shift
+				wok_add "$@"
+				wok_exit $EXIT_SUCCESS;;
+
+			rm|remove)
+				shift
+				wok_remove "$@"
+				wok_exit $EXIT_SUCCESS;;
+
+			ls|list)
+				shift
+				wok_list "$@"
+				wok_exit $EXIT_SUCCESS;;
+
+			*)
+				shift
+				module="$(echo "$arg" | sed -e 's/[ \-]/_/g')"
+
+				if ! wok_module_has "$module"; then
+					wok_perror "${wok_name}: '${arg}' is not a valid command. See '${wok_command} --help'."
+					wok_exit $EXIT_ERROR_USER
+				fi
+
+				wok_module_handle "$module" "$@"
+				wok_exit $EXIT_SUCCESS;;
+
 		esac
 	done
-
-	if wok_module_has "$module"; then
-		wok_module_handle "$cmd" "$@"
-		wok_exit $EXIT_SUCCESS
-	fi
-
-	wok_usage >&2
-	wok_exit $EXIT_USER_ERROR
 }
 
 #-----------------------------------------------------------------------

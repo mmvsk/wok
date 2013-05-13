@@ -18,12 +18,33 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
-wok_bar_describe()
+wok_add()
 {
-	echo "The bar module helps you drink beers"
+	local arg
+	local arg_value
+
+	local opt_domain=""
+	local opt_interactive=false
+	local opt_cascade=false
+	local opt_passwd=
+	local opt_passwd_generate=true
+
+	for arg in "$@"; do
+		arg_value="$(arg_parseValue "$arg")"
+
+
+	done
+
+
+	wok_repo_has "$domain"
 }
 
-wok_bar_handle()
+wok_remove()
 {
-	echo "The bar module"
+	echo REMOVE $*
+}
+
+wok_list()
+{
+	echo LIST $*
 }

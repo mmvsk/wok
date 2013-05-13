@@ -29,6 +29,24 @@ wok_module_has()
 	return 1
 }
 
+wok_module_describe()
+{
+	local module="$1"
+	local handler="wok_${module}_describe"
+
+	if ! wok_module_has "$module"; then
+		wok_perror "Unavailable module: ${module}"
+		wok_exit $EXIT_ERROR_SYSTEM
+	fi
+
+	if ! description="$("$handler")"; then
+		wok_perror "Module error"
+		wok_exit $EXIT_ERROR_SYSTEM
+	fi
+
+	echo "$description"
+}
+
 wok_module_handle()
 {
 	local module="$1"
@@ -37,11 +55,13 @@ wok_module_handle()
 	local param="$@"
 
 	if ! wok_module_has "$module"; then
-		wok_exit $EXIT_USER_ERROR "Invalid module: ${module}"
+		wok_perror "Unavailable module: ${module}"
+		wok_exit $EXIT_ERROR_SYSTEM
 	fi
 
 	if ! "$handler" "${param[@]}"; then
-		wok_exit $EXIT_SYSTEM_ERROR "Module error"
+		wok_perror "Module error"
+		wok_exit $EXIT_ERROR_SYSTEM
 	fi
 }
 
@@ -54,7 +74,7 @@ wok_module_cascade()
 
 	for module in ${modules[@]}; do
 		if ! wok_module_has "$module"; then
-			wok_exit $EXIT_USER_ERROR "Invalid module: ${module}"
+			wok_exit $EXIT_ERROR_USER "Invalid module: ${module}"
 		fi
 
 		wok_module_handle "$module" "$action" "${options[@]}"

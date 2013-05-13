@@ -1,16 +1,8 @@
 Wok
 ===
 
-
-
-To be done
-----------
-
-- Bash need to be rewritten (very poorly implemented, I was only
-  beginning bash :/)
-- PHP functions may be rewritten
-- Change configuration file to json (and a Python to retrieve)
-- May be rewritten in Python3, use sqlite or another db
+Installation
+------------
 
 Change log
 ----------

@@ -18,12 +18,26 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
-wok_bar_describe()
+#
+# Retrieve and print the “value” part of a command-line argument
+#
+# Usage: arg_parseValue <argument>
+#
+arg_parseValue()
 {
-	echo "The bar module helps you drink beers"
-}
+	local arg="$1"
+	local value
 
-wok_bar_handle()
-{
-	echo "The bar module"
+	# Short: -u"username"
+	if [[ $arg =~ ^-[[:alnum:]_]. ]]; then
+		echo "${arg:2}"
+		return 0
+
+	# Long: --username="username"
+	elif [[ $arg =~ ^--[[:alnum:]_][[:alnum:]_\-]+= ]]; then
+		echo "${arg#*=}"
+		return 0
+
+	fi
+	return 1
 }
