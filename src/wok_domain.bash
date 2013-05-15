@@ -22,23 +22,25 @@ wok_add()
 {
 	local arg
 	local arg_value
+	local args_remain=()
 	local module
-	local existingModule
+	local cmd
 
-	local i=0
-	local domain=""
+	local domain=
 	local interactive=false
 	local cascade=false
 	local cascade_modules=()
 	local passwd=
 	local passwd_generate=true
+	local report_to=
 
 	for arg in "$@"; do
 		case "$arg" in
 
 			-h|--help)
 				echo "Usage: ${wok_command} add [--interactive|-i] [--password=<password>]"
-				echo "               [--cascade|-c] [--with-<module>] <domain>"
+				echo "               [--cascade|-c] [--with-<module>] [--report-to=<email>]"
+				echo "               <domain>"
 				echo
 				echo "Modules:"
 				echo
@@ -52,7 +54,8 @@ wok_add()
 					fi
 					echo "    ${module}${psep}${module_descr}"
 				done
-				echo;;
+				echo
+				return $EXIT_SUCCESS;;
 
 			-i|--interactive)
 				interactive=true;;
@@ -72,33 +75,40 @@ wok_add()
 					wok_perror "Invalid module '${module}'."
 					wok_exit $EXIT_ERROR_USER
 				fi
-				for existingModule in "${cacade_modules[@]}"; do
-					if [[ $module == $existingModule ]]; then
-						# TODO FIXME If exisrs not add; add a common/array_has, common/array_add
-					fi
-				done
+				if ! array_has cascade_modules[@] "$module"; then
+					cascade_modules=("${cascade_modules[@]}" "$module")
+				fi;;
 
-				cascade_modules=("${cascade_modules[@]}" "$module");;
+			--report-to=*)
+				if ! report_to="$(arg_parseValue "$arg")"; then
+					wok_perror "Invalid usage."
+					wok_exit $EXIT_ERROR_USER
+				fi;;
 
 			*)
-				case "$i" in
-					0) domain="$arg";;
-					*)
-						wok_perror "Invalid usage."
-						wok_exit $EXIT_ERROR_USER;;
-				esac
-				((i++));;
+				args_remain=("${args_remain[@]}" "$arg");;
 
 		esac
 	done
 
-	#TODO FIXME
-	echo "STOP."; exit
+	if [[ ${#args_remain[@]} -ne 1 ]]; then
+		wok_perror "Invalid usage. See '${wok_command} add --help'."
+		wok_exit $EXIT_ERROR_USER
+	fi
+
+	domain="${args_remain[0]}"
 
 	if wok_repo_has "$domain"; then
 		wok_perror "Domain '${domain}' already exists."
 		wok_exit $EXIT_ERROR_USER
 	fi
+
+	cmd=(wok_repo_add "$domain")
+	if ! ui_showProgress "Adding managed domain '${domain}'" "${cmd[@]}"; then
+		wok_exit $EXIT_ERROR_SYSTEM
+	fi
+
+	echo "All right!"
 }
 
 wok_remove()

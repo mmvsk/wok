@@ -18,35 +18,28 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# TODO USE INI_GET, INI_SET
 #
-# /index/
-#   <module>/
-#     domain.list
-#     uid.list
+# Reverse the order of an list
 #
-# /lessources.be.ini
-# /lesmachins.be.ini
+# Usage: list_reverse <list_var_name>
 #
-
-
-wok_repo_has()
+#   arr=("hello world" "bonjour le monde")
+#   list_reverse arr
+#   # ("bonjour le monde" "hello world")
+#   
+# Variables you use must not start with '__'.
+#
+list_reverse()
 {
-	local domain="$1"
+	local __list_add__list_name="$1"
+	local __list_add__list_values=()
+	eval "__list_add__list_values=(\"\${${1}[@]}\")"
+	local __list_add__i_val=()
+	local __list_add__eval_values=""
 
-	return 1
+	for __list_add__i_val in "${__list_add__list_values[@]}"; do
+		__list_add__eval_values="$(printf %q "${__list_add__i_val}") ${__list_add__eval_values}"
+	done
+
+	eval "${__list_add__list_name}=(${__list_add__eval_values})"
 }
-
-wok_repo_add()
-{
-	local domain="$1"
-}
-
-wok_repo_index_has()
-{
-	local module="$1"
-	local section="$2"
-	local token="$3"
-}
-
-
