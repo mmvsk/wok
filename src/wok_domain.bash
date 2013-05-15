@@ -18,6 +18,8 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
+WOK_DOMAIN_PATTERN='^[[:alnum:]]+([.\-][[:alnum:]]+)*$'
+
 wok_add()
 {
 	local arg
@@ -28,11 +30,11 @@ wok_add()
 
 	local domain=
 	local interactive=false
-	local cascade=false
-	local cascade_modules=()
+	local module_cascade_defaults=false
+	local module_cascade_list=()
 	local passwd=
 	local passwd_generate=true
-	local report_to=
+	local report_to=()
 
 	for arg in "$@"; do
 		case "$arg" in
@@ -61,7 +63,7 @@ wok_add()
 				interactive=true;;
 
 			-c|--cascade)
-				cascade=true;;
+				module_cascade_defaults=true;;
 
 			-p*|--password=*)
 				if ! passwd="$(arg_parseValue "$arg")"; then
@@ -75,15 +77,14 @@ wok_add()
 					wok_perror "Invalid module '${module}'."
 					wok_exit $EXIT_ERROR_USER
 				fi
-				if ! array_has cascade_modules[@] "$module"; then
-					cascade_modules=("${cascade_modules[@]}" "$module")
-				fi;;
+				list_add module_cascade_list "$module";;
 
 			--report-to=*)
-				if ! report_to="$(arg_parseValue "$arg")"; then
+				if ! arg_value="$(arg_parseValue "$arg")"; then
 					wok_perror "Invalid usage."
 					wok_exit $EXIT_ERROR_USER
-				fi;;
+				fi
+				list_add report_to "$arg_value";;
 
 			*)
 				args_remain=("${args_remain[@]}" "$arg");;
@@ -103,12 +104,30 @@ wok_add()
 		wok_exit $EXIT_ERROR_USER
 	fi
 
+	if ! [[ $domain =~ $WOK_DOMAIN_PATTERN ]]; then
+		wok_perror "Domain name '${domain}' is invalid. Please use the following pattern:"
+		wok_perror
+		wok_perror "    ${WOK_DOMAIN_PATTERN}"
+		wok_perror
+		wok_exit $EXIT_ERROR_USER
+	fi
+
+	if $module_cascade_defaults; then
+		for module in $(wok_module_getDefaults); do
+			list_add module_cascade_list "$module"
+		done
+	fi
+	wok_module_orderList module_cascade_list
+
 	cmd=(wok_repo_add "$domain")
 	if ! ui_showProgress "Adding managed domain '${domain}'" "${cmd[@]}"; then
 		wok_exit $EXIT_ERROR_SYSTEM
 	fi
 
-	echo "All right!"
+	echo
+	echo "Domain: ${domain}"
+	echo "Modules: ${module_cascade_list[*]}"
+	echo "Report to: ${report_to[*]}"
 }
 
 wok_remove()

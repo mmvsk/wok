@@ -28,13 +28,13 @@
 #     #...
 #   fi
 #
-# Given list name mustn't begin with '__list_has' (in fact, it never
+# Given list name mustn't begin with '' (in fact, it never
 # should begin with '__').
 #
 list_has()
 {
-	local __list_has__list_name="${1}[@]"
-	local list=("${!__list_has__list_name}")
+	local list_ref="${1}[@]"
+	local list=("${!list_ref}")
 	local value="$2"
 	local list_val
 

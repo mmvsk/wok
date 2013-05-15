@@ -23,6 +23,11 @@ wok_bar_describe()
 	echo "The bar module helps you drink beers"
 }
 
+wok_bar_pdeps()
+{
+	echo
+}
+
 wok_bar_handle()
 {
 	echo "The bar module"

@@ -33,6 +33,7 @@ wok_module_describe()
 {
 	local module="$1"
 	local handler="wok_${module}_describe"
+	local description
 
 	if ! wok_module_has "$module"; then
 		wok_perror "Unavailable module: ${module}"
@@ -45,6 +46,28 @@ wok_module_describe()
 	fi
 
 	echo "$description"
+}
+
+#
+# Return a simple word list separated by a space
+#
+wok_module_pdeps()
+{
+	local module="$1"
+	local handler="wok_${module}_pdeps"
+	local deps
+
+	if ! wok_module_has "$module"; then
+		wok_perror "Unavailable module: ${module}"
+		wok_exit $EXIT_ERROR_SYSTEM
+	fi
+
+	if ! deps="$("$handler")"; then
+		wok_perror "Module error"
+		wok_exit $EXIT_ERROR_SYSTEM
+	fi
+
+	echo "$deps"
 }
 
 wok_module_handle()
@@ -65,21 +88,35 @@ wok_module_handle()
 	fi
 }
 
-#
-# Note: elements are separated by a simple space.
-#
-wok_module_order()
+wok_module_getDefaults()
 {
-	buf= nil; 4(3) 
+	wok_config_get wok modules
 }
 
+wok_module_orderList()
+{
+	local __list_ref="$1"
+	local __modules=()
+	eval "__modules=(\"\${${1}[@]}\")"
+	local __module
+	local __dep
+	local __ordered=()
 
-
-
+	for __module in "${__modules[@]}"; do
+		for __dep in $(wok_module_pdeps "$__module"); do
+			if ! list_has __ordered "$__dep"; then
+				continue 2
+				#TODO if during a full loop nothing happenned, stop and exit sys error
+			fi
+		done
+		list_add __ordered "$__module"
+	done
+}
 
 wok_module_cascade()
 {
-	local action="$1"
+	local modules="$1" #TODO get real list...
+	local action="$2"
 	shift
 	local options=("$@")
 	local modules=($(wok_config_get wok modules))

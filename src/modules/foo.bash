@@ -23,6 +23,11 @@ wok_foo_describe()
 	echo "The foo module helps you kill Phuc"
 }
 
+wok_foo_pdeps()
+{
+	echo bar
+}
+
 wok_foo_handle()
 {
 	echo "The foo module"

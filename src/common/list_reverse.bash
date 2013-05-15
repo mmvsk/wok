@@ -31,15 +31,15 @@
 #
 list_reverse()
 {
-	local __list_add__list_name="$1"
-	local __list_add__list_values=()
-	eval "__list_add__list_values=(\"\${${1}[@]}\")"
-	local __list_add__i_val=()
-	local __list_add__eval_values=""
+	local __list_ref="$1"
+	local __list_values=()
+	eval "__list_values=(\"\${${1}[@]}\")"
+	local __i_val=()
+	local __eval_values=""
 
-	for __list_add__i_val in "${__list_add__list_values[@]}"; do
-		__list_add__eval_values="$(printf %q "${__list_add__i_val}") ${__list_add__eval_values}"
+	for __i_val in "${__list_values[@]}"; do
+		__eval_values="$(printf %q "${__i_val}") ${__eval_values}"
 	done
 
-	eval "${__list_add__list_name}=(${__list_add__eval_values})"
+	eval "${__list_ref}=(${__eval_values})"
 }
