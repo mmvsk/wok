@@ -18,28 +18,31 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
-#
-# Reverse the order of an list
-#
-# Usage: list_reverse <list_var_name>
-#
-#   arr=("hello world" "bonjour le monde")
-#   list_reverse arr
-#   # ("bonjour le monde" "hello world")
-#   
-# Variables you use must not start with '__'.
-#
-list_reverse()
+wok_report_create()
 {
-	local __list_ref="$1"
-	local __list_values=()
-	eval "__list_values=(\"\${${1}[@]}\")"
-	local __i_val=()
-	local __eval_values=""
+	local __report_ref="$1"
+	local __report
 
-	for __i_val in "${__list_values[@]}"; do
-		__eval_values="$(printf %q "${__i_val}") ${__eval_values}"
-	done
+	__report="$(mktemp)"
+	printf -v "$__report_ref" %s "$__report"
+}
 
-	eval "${__list_ref}=(${__eval_values})"
+wok_report_close()
+{
+	local __report="${!1}"
+
+	if [[ ! -f $__report ]]; then
+		return 1
+	fi
+
+	rm "$__report"
+}
+
+#
+# @param ref $report
+wok_report_send()
+{
+	local __report="${!1}"
+	local __email="$2"
+	local __subject="$3"
 }

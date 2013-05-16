@@ -67,28 +67,28 @@ pipe_clean()
 	rm "$pipe"
 }
 
-assert_choice_equals()
+assert_password_equals()
 {
 	local descr="$1"
 	local expect="$2"
 	local inp="$3"
 	local message="$4"
 	local pattern="$5"
-	local choice
+	local password
 
 	echo -n "Testing ${descr}: "
 	pipe_fill "$inp"
 	if [[ -n $message ]]; then
-		"$bin" -m "$message" choice "$pattern" <"$pipe" >/dev/null 2>/dev/null
+		"$bin" password "$pattern" "$message" <"$pipe" >/dev/null 2>/dev/null
 	else
-		"$bin" choice "$pattern" <"$pipe" >/dev/null 2>/dev/null
+		"$bin" password "$pattern" "" <"$pipe" >/dev/null 2>/dev/null
 	fi
-	if [[ $choice == $expect ]]; then
+	if [[ $password == $expect ]]; then
 		echo "OK"
 	else
 		echo -e "\033[0;31mfailed!\033[0m"
 		#echo "Expected: $expect"
-		#echo "Result: $choice"
+		#echo "Result: $password"
 		exit $E_TEST_FAILED
 	fi
 }
@@ -96,12 +96,12 @@ assert_choice_equals()
 pipe_init
 
 #<assert_fn>         <description>          <expectation>   <user_input>                                             <message>        <pattern>
-assert_choice_equals "password #1"          "abc123"        "abc123\nabc123"
-assert_choice_equals "password #2"          "Hello, world!" "Hello, world!\nHello, world!"
-assert_choice_equals "prompt repeat #1"     "abc123"        "aka777\naka888\nabc123\nabc123"
-assert_choice_equals "prompt repeat #2"     "aka777"        "aka777\naka777\nabc123\nabc123"
-assert_choice_equals "custom message"       "abc123"        "abc123\nabc123"                                         "Give your pass"
-assert_choice_equals "syntax validation #1" "abcd1234"      "abc123\nabc123\nabcd1234\nabcd1234"                     ""               '.{8,}'
-assert_choice_equals "syntax validation #2" "b3c 6fa !"     "abc123\nabc123\naaa222!\naaa222!\nb3c 6fa !\nb3c 6fa !" ""               '^([a-f0-9]{3} ){2}!$'
+assert_password_equals "password #1"          "abc123"        "abc123\nabc123"
+assert_password_equals "password #2"          "Hello, world!" "Hello, world!\nHello, world!"
+assert_password_equals "prompt repeat #1"     "abc123"        "aka777\naka888\nabc123\nabc123"
+assert_password_equals "prompt repeat #2"     "aka777"        "aka777\naka777\nabc123\nabc123"
+assert_password_equals "custom message"       "abc123"        "abc123\nabc123"                                         "Give your pass"
+assert_password_equals "syntax validation #1" "abcd1234"      "abc123\nabc123\nabcd1234\nabcd1234"                     ""               '.{8,}'
+assert_password_equals "syntax validation #2" "b3c 6fa !"     "abc123\nabc123\naaa222!\naaa222!\nb3c 6fa !\nb3c 6fa !" ""               '^([a-f0-9]{3} ){2}!$'
 
 pipe_clean

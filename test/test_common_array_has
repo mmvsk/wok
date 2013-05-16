@@ -25,7 +25,7 @@ E_TEST_FAILED=2
 if [[ -n $1 ]]; then
 	inc="$1"
 else
-	inc="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/src/common/list_reverse.bash"
+	inc="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/src/common/array_has.bash"
 fi
 
 if [[ ! -f $inc ]]; then
@@ -35,14 +35,7 @@ fi
 
 . "$inc"
 
-bin="list_reverse"
-
-test_descr()
-{
-	local descr="$1"
-
-	echo -n "Testing ${descr}..."
-}
+bin="array_has"
 
 test_fail()
 {
@@ -50,23 +43,35 @@ test_fail()
 	exit $E_TEST_FAILED
 }
 
-test_succeed()
+assert_true()
 {
-	echo "OK"
+	local descr="$1"
+	shift
+
+	echo -n "Testing ${descr}: "
+	if "$bin" "$@" >/dev/null 2>/dev/null; then
+		echo "OK"
+	else
+		test_fail
+	fi
 }
 
-test_qexec()
+assert_false()
 {
-	"$bin" "$@" >/dev/null 2>/dev/null
+	local descr="$1"
+	shift
+
+	echo -n "Testing ${descr}: "
+	if ! "$bin" "$@" >/dev/null 2>/dev/null; then
+		echo "OK"
+	else
+		test_fail
+	fi
 }
 
-{
-	list=("hello world" "john is here" "adriatic")
-	test_descr "list reversing"
-	test_qexec list || test_fail
-	[[ ${#list[@]} -ne 3 ]] && test_fail
-	[[ ${list[0]} != "adriatic" ]] && test_fail
-	[[ ${list[1]} != "john is here" ]] && test_fail
-	[[ ${list[2]} != "hello world" ]] && test_fail
-	test_succeed
-}
+list=("hello world" "john is here" "adriatic" "seq" "on the top")
+
+assert_true  "existing value #1"    list "adriatic"
+assert_true  "existing value #2"    list "john is here"
+assert_false "unavailable value #1" list "unavailable"
+assert_false "unavailable value #2" list "adriatic seq"

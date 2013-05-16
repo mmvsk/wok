@@ -19,33 +19,27 @@
 #
 
 #
-# Adds a value to an list
+# Reverse the order of an array
 #
-# Usage: list_add <list_var_name> <value>
+# Usage: array_reverse <array_var_name>
 #
 #   arr=("hello world" "bonjour le monde")
-#   list_add arr "buenos dias"
+#   array_reverse arr
+#   # ("bonjour le monde" "hello world")
 #   
 # Variables you use must not start with '__'.
 #
-list_add()
+array_reverse()
 {
-	local __list_ref="$1"
-	local __list_values=()
-	eval "__list_values=(\"\${${1}[@]}\")"
-	local __value="$2"
+	local __array_ref="$1"
+	local __array_values=()
+	eval "__array_values=(\"\${${1}[@]}\")"
 	local __i_val=()
 	local __eval_values=""
 
-	for __i_val in "${__list_values[@]}"; do
-		if [[ $__value == $__i_val ]]; then
-			return 1
-		fi
+	for __i_val in "${__array_values[@]}"; do
+		__eval_values="$(printf %q "${__i_val}") ${__eval_values}"
 	done
 
-	for __i_val in "${__list_values[@]}" "$__value"; do
-		__eval_values="${__eval_values} $(printf %q "${__i_val}")"
-	done
-
-	eval "${__list_ref}=(${__eval_values})"
+	eval "${__array_ref}=(${__eval_values})"
 }

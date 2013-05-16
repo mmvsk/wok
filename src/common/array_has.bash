@@ -19,27 +19,27 @@
 #
 
 #
-# Check if an list contains a value
+# Check if an array contains a value
 #
-# Usage: list_has <list_name> <element>
+# Usage: array_has <array_name> <element>
 #
 #   arr=("hello world" "bonjour le monde")
-#   if list_has arr "bonjour le monde"; then
+#   if array_has arr "bonjour le monde"; then
 #     #...
 #   fi
 #
-# Given list name mustn't begin with '' (in fact, it never
+# Given array name mustn't begin with '' (in fact, it never
 # should begin with '__').
 #
-list_has()
+array_has()
 {
-	local list_ref="${1}[@]"
-	local list=("${!list_ref}")
+	local array_ref="${1}[@]"
+	local array=("${!array_ref}")
 	local value="$2"
-	local list_val
+	local array_val
 
-	for list_val in "${list[@]}"; do
-		if [[ $value == $list_val ]]; then
+	for array_val in "${array[@]}"; do
+		if [[ $value == $array_val ]]; then
 			return 0
 		fi
 	done

@@ -19,6 +19,9 @@
 #
 
 WOK_DOMAIN_PATTERN='^[[:alnum:]]+([.\-][[:alnum:]]+)*$'
+WOK_PASSWD_PATTERN='^[[:alnum:]]{8,64}$'
+WOK_PASSWD_LENGTH=12
+WOK_PASSWD_CMD="pwgen -s $WOK_PASSWD_LENGTH 1"
 
 wok_add()
 {
@@ -27,22 +30,24 @@ wok_add()
 	local args_remain=()
 	local module
 	local cmd
+	local param=()
 
-	local domain=
+	local domain=""
 	local interactive=false
-	local module_cascade_defaults=false
-	local module_cascade_list=()
-	local passwd=
+	local cascade_defaults=false
+	local cascade_list=()
+	local passwd=""
 	local passwd_generate=true
 	local report_to=()
+	local print_report=false
 
 	for arg in "$@"; do
 		case "$arg" in
 
 			-h|--help)
 				echo "Usage: ${wok_command} add [--interactive|-i] [--password=<password>]"
-				echo "               [--cascade|-c] [--with-<module>] [--report-to=<email>]"
-				echo "               <domain>"
+				echo "               [--cascade|-c] [--with-<module>] [--print-report]"
+				echo "               [--report-to=<email>] <domain>"
 				echo
 				echo "Modules:"
 				echo
@@ -63,7 +68,7 @@ wok_add()
 				interactive=true;;
 
 			-c|--cascade)
-				module_cascade_defaults=true;;
+				cascade_defaults=true;;
 
 			-p*|--password=*)
 				if ! passwd="$(arg_parseValue "$arg")"; then
@@ -77,14 +82,17 @@ wok_add()
 					wok_perror "Invalid module '${module}'."
 					wok_exit $EXIT_ERROR_USER
 				fi
-				list_add module_cascade_list "$module";;
+				array_add cascade_list "$module";;
+
+			--print-report)
+				print_report=true;;
 
 			--report-to=*)
 				if ! arg_value="$(arg_parseValue "$arg")"; then
 					wok_perror "Invalid usage."
 					wok_exit $EXIT_ERROR_USER
 				fi
-				list_add report_to "$arg_value";;
+				array_add report_to "$arg_value";;
 
 			*)
 				args_remain=("${args_remain[@]}" "$arg");;
@@ -112,22 +120,39 @@ wok_add()
 		wok_exit $EXIT_ERROR_USER
 	fi
 
-	if $module_cascade_defaults; then
+	if $cascade_defaults; then
 		for module in $(wok_module_getDefaults); do
-			list_add module_cascade_list "$module"
+			array_add cascade_list "$module"
 		done
 	fi
-	wok_module_orderList module_cascade_list
+	wok_module_resolveDeps cascade_list
+
+	if ! [[ $passwd =~ $WOK_PASSWD_PATTERN ]]; then
+		if $interactive && ! user_confirm "Generate a global password?"; then
+			user_getPasswd passwd "$WOK_PASSWD_PATTERN"
+		else
+			passwd="$($WOK_PASSWD_CMD)"
+		fi
+	fi
+
+	#
+	# Process!
+	#
 
 	cmd=(wok_repo_add "$domain")
 	if ! ui_showProgress "Adding managed domain '${domain}'" "${cmd[@]}"; then
 		wok_exit $EXIT_ERROR_SYSTEM
 	fi
 
-	echo
-	echo "Domain: ${domain}"
-	echo "Modules: ${module_cascade_list[*]}"
-	echo "Report to: ${report_to[*]}"
+	param=()
+	$interactive && array_add param "--interactive"
+	array_add param "--password=${passwd}"
+
+	wok_module_cascade cascade_list add param "$domain"
+
+	wok_report_create report
+	wok_report_printfl report "# Wok Recipe: %s" "$domain"
+	wok_report_printl
 }
 
 wok_remove()

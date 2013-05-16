@@ -75,7 +75,7 @@ wok_module_handle()
 	local module="$1"
 	shift
 	local handler="wok_${module}_handle"
-	local param="$@"
+	local param=("$@")
 
 	if ! wok_module_has "$module"; then
 		wok_perror "Unavailable module: ${module}"
@@ -93,39 +93,54 @@ wok_module_getDefaults()
 	wok_config_get wok modules
 }
 
-wok_module_orderList()
+wok_module_resolveDeps()
 {
-	local __list_ref="$1"
+	local __array_ref="$1"
 	local __modules=()
 	eval "__modules=(\"\${${1}[@]}\")"
+	local __modules_n=${#__modules[@]}
 	local __module
 	local __dep
 	local __ordered=()
+	local __ordered_n=0
+	local __i=0
+	local __eval_values=""
 
-	for __module in "${__modules[@]}"; do
-		for __dep in $(wok_module_pdeps "$__module"); do
-			if ! list_has __ordered "$__dep"; then
-				continue 2
-				#TODO if during a full loop nothing happenned, stop and exit sys error
-			fi
+	while [[ $__ordered_n -lt $__modules_n ]]; do
+		for __module in "${__modules[@]}"; do
+			for __dep in $(wok_module_pdeps "$__module"); do
+				if ! array_has __ordered "$__dep"; then
+					continue 2
+				fi
+			done
+			array_add __ordered "$__module"
 		done
-		list_add __ordered "$__module"
+
+		__ordered_n=${#__ordered[@]}
+		if [[ $__i -eq $__ordered_n ]]; then
+			wok_perror "Could not resolve module dependency."
+			wok_exit $EXIT_ERROR_SYSTEM
+		fi
+		__i=$__ordered_n
 	done
+
+	for __module in "${__ordered[@]}"; do
+		__eval_values="${__eval_values} $(printf %q "${__module}")"
+	done
+
+	eval "${__array_ref}=(${__eval_values})"
 }
 
 wok_module_cascade()
 {
-	local modules="$1" #TODO get real list...
+	local modules_ref="${1}[@]"
+	local modules=("${!modules_ref}")
 	local action="$2"
-	shift
-	local options=("$@")
-	local modules=($(wok_config_get wok modules))
+	shift 2
+	local param=("$@")
+	local module
 
-	for module in ${modules[@]}; do
-		if ! wok_module_has "$module"; then
-			wok_exit $EXIT_ERROR_USER "Invalid module: ${module}"
-		fi
-
-		wok_module_handle "$module" "$action" "${options[@]}"
+	for module in "${modules[@]}"; do
+		wok_module_handle "$module" "$action" "${param[@]}"
 	done
 }

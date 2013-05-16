@@ -29,29 +29,24 @@
 #
 user_getPasswd()
 {
-	local message="Password"
-	local out_var
-	local passwd
-	local passwd_confirm
+	local __var_ref="$1"
+	local __pattern="$2"
+	local __message="$3"
+	local __passwd
+	local __passwd_confirm
 
-	if [[ $1 == "-m" ]]; then
-		message="$2"
-		shift 2
+	if [[ -z $__message ]]; then
+		__message="Password"
 	fi
 
-	[[ $# -lt 1 ]] && return 1
-
-	out_var="$1"
-	pattern="$2"
-
 	while true; do
-		read -s -ep "${message}: " passwd; echo
-		if [[ -n $pattern ]] && ! [[ $passwd =~ $pattern ]]; then
-			echo -e "Invalid password (pattern: \033[0;33m${pattern}\033[0m), please try again..."
+		read -s -ep "${__message}: " __passwd; echo
+		if [[ -n $__pattern ]] && ! [[ $__passwd =~ $__pattern ]]; then
+			echo -e "Invalid password (pattern: \033[0;33m${__pattern}\033[0m), please try again..."
 			continue
 		fi
-		read -s -ep "${message} (again): " passwd_confirm; echo
-		if [[ $passwd == $passwd_confirm ]]; then
+		read -s -ep "${__message} (again): " __passwd_confirm; echo
+		if [[ $__passwd == $__passwd_confirm ]]; then
 			break
 		else
 			echo "Password mismatch, please try again..."
@@ -59,5 +54,5 @@ user_getPasswd()
 		fi
 	done
 
-	printf -v "$out_var" %s "$passwd"
+	printf -v "$__var_ref" %s "$__passwd"
 }
