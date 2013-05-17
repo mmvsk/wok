@@ -25,9 +25,9 @@
 #
 # You can also enforce the password syntax using a regular expression.
 #
-# Usage: user_getPasswd [-m <message>] <out_var> <regex_pattern>
+# Usage: ui_getPasswd [-m <message>] <out_var> <regex_pattern>
 #
-user_getPasswd()
+ui_getPasswd()
 {
 	local __var_ref="$1"
 	local __pattern="$2"

@@ -22,16 +22,11 @@ WOK_DOMAIN_PATTERN='^[[:alnum:]]+([.\-][[:alnum:]]+)*$'
 WOK_PASSWD_PATTERN='^[[:alnum:]]{8,64}$'
 WOK_PASSWD_LENGTH=12
 WOK_PASSWD_CMD="pwgen -s $WOK_PASSWD_LENGTH 1"
+WOK_LOG_PATTERN="^/tmp/"
 
 wok_add()
 {
-	local arg
-	local arg_value
-	local args_remain=()
-	local module
-	local cmd
-	local param=()
-
+	# Argument vars
 	local domain=""
 	local interactive=false
 	local cascade_defaults=false
@@ -39,14 +34,26 @@ wok_add()
 	local passwd=""
 	local passwd_generate=true
 	local report_to=()
-	local print_report=false
+	local report_log=""
 
+	# Temp vars
+	local arg
+	local arg_value
+	local args_remain=()
+	local module
+	local cmd
+	local param=()
+	local report
+	local email
+	local email_from
+
+	# Process arguments
 	for arg in "$@"; do
 		case "$arg" in
 
 			-h|--help)
 				echo "Usage: ${wok_command} add [--interactive|-i] [--password=<password>]"
-				echo "               [--cascade|-c] [--with-<module>] [--print-report]"
+				echo "               [--cascade|-c] [--with-<module>] [--report-log=<file>]"
 				echo "               [--report-to=<email>] <domain>"
 				echo
 				echo "Modules:"
@@ -84,8 +91,20 @@ wok_add()
 				fi
 				array_add cascade_list "$module";;
 
-			--print-report)
-				print_report=true;;
+			--report-log=*)
+				if ! arg_value="$(arg_parseValue "$arg")"; then
+					wok_perror "Invalid usage."
+					wok_exit $EXIT_ERROR_USER
+				fi
+				if ! [[ $arg_value =~ $WOK_LOG_PATTERN ]]; then
+					wok_perror "The log file must be located in a temp directory."
+					wok_exit $EXIT_ERROR_USER
+				fi
+				if [[ ! -f $arg_value ]]; then
+					wok_perror "The log file must already be created."
+					wok_exit $EXIT_ERROR_USER
+				fi
+				report_log="$arg_value";;
 
 			--report-to=*)
 				if ! arg_value="$(arg_parseValue "$arg")"; then
@@ -100,18 +119,18 @@ wok_add()
 		esac
 	done
 
+	# Only one additional argument is required: the domain name
 	if [[ ${#args_remain[@]} -ne 1 ]]; then
 		wok_perror "Invalid usage. See '${wok_command} add --help'."
 		wok_exit $EXIT_ERROR_USER
 	fi
 
+	# Domain name processing
 	domain="${args_remain[0]}"
-
 	if wok_repo_has "$domain"; then
 		wok_perror "Domain '${domain}' already exists."
 		wok_exit $EXIT_ERROR_USER
 	fi
-
 	if ! [[ $domain =~ $WOK_DOMAIN_PATTERN ]]; then
 		wok_perror "Domain name '${domain}' is invalid. Please use the following pattern:"
 		wok_perror
@@ -120,6 +139,7 @@ wok_add()
 		wok_exit $EXIT_ERROR_USER
 	fi
 
+	# Determine modules
 	if $cascade_defaults; then
 		for module in $(wok_module_getDefaults); do
 			array_add cascade_list "$module"
@@ -127,32 +147,56 @@ wok_add()
 	fi
 	wok_module_resolveDeps cascade_list
 
+	# Create the password
 	if ! [[ $passwd =~ $WOK_PASSWD_PATTERN ]]; then
-		if $interactive && ! user_confirm "Generate a global password?"; then
-			user_getPasswd passwd "$WOK_PASSWD_PATTERN"
+		if $interactive && ! ui_confirm "Generate a global password?"; then
+			ui_getPasswd passwd "$WOK_PASSWD_PATTERN"
 		else
 			passwd="$($WOK_PASSWD_CMD)"
 		fi
 	fi
 
 	#
-	# Process!
+	# Go!
 	#
 
+	# Register the domain in the repo
 	cmd=(wok_repo_add "$domain")
 	if ! ui_showProgress "Adding managed domain '${domain}'" "${cmd[@]}"; then
 		wok_exit $EXIT_ERROR_SYSTEM
 	fi
 
+	# Create the report
+	wok_report_create report
+	wok_report_insl report "Wok recipe: %s" "$domain"
+	wok_report_insl report ""
+
+	# Determine module arguments
 	param=()
 	$interactive && array_add param "--interactive"
 	array_add param "--password=${passwd}"
+	array_add param "--report-log=${report}"
 
-	wok_module_cascade cascade_list add param "$domain"
+	# Call the modules
+	wok_module_cascade cascade_list add "${param[@]}" "$domain"
 
-	wok_report_create report
-	wok_report_printfl report "# Wok Recipe: %s" "$domain"
-	wok_report_printl
+	# Log the report
+	if [[ -n $report_log ]]; then
+		wok_report_print report "$report_log"
+	fi
+
+	# Send the report via e-mail
+	if [[ ${#report_to[@]} -gt 0 ]]; then
+		param=()
+		email_from="$(wok_config_get wok report_email_from)"
+		[[ -n $email_from ]] && param=("${param[@]}" "$email_from")
+		for email in "${report_to[@]}"; do
+			wok_report_send report "$email" "Wok recipe: ${domain}" "${param[@]}"
+		done
+	fi
+
+	# Clean the report
+	wok_report_delete report
 }
 
 wok_remove()

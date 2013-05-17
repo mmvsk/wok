@@ -42,7 +42,7 @@ wok_repo_add()
 	local domain="$1"
 }
 
-wok_repo_index_has()
+wok_repo_cust_has()
 {
 	local module="$1"
 	local section="$2"

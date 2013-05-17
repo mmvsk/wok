@@ -21,11 +21,11 @@
 #
 # Ask an interactive user to confirm an action.
 #
-# Usage: user_confirm <action> (&& PERFORM_ACTION || CANCEL)
+# Usage: ui_confirm <action> (&& PERFORM_ACTION || CANCEL)
 #
 # @return bool Confirmation
 #
-user_confirm()
+ui_confirm()
 {
 	local action="$1"
 	local user_resp=""

@@ -25,7 +25,7 @@ E_TEST_FAILED=2
 if [[ -n $1 ]]; then
 	inc="$1"
 else
-	inc="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/src/common/user_getPasswd.bash"
+	inc="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/src/common/ui_getPasswd.bash"
 fi
 
 if [[ ! -f $inc ]]; then
@@ -35,7 +35,7 @@ fi
 
 . "$inc"
 
-bin="user_getPasswd"
+bin="ui_getPasswd"
 pipe=
 
 pipe_new()
@@ -95,7 +95,7 @@ assert_password_equals()
 
 pipe_init
 
-#<assert_fn>         <description>          <expectation>   <user_input>                                             <message>        <pattern>
+#<assert_fn>           <description>          <expectation>   <user_input>                                             <message>        <pattern>
 assert_password_equals "password #1"          "abc123"        "abc123\nabc123"
 assert_password_equals "password #2"          "Hello, world!" "Hello, world!\nHello, world!"
 assert_password_equals "prompt repeat #1"     "abc123"        "aka777\naka888\nabc123\nabc123"

@@ -22,9 +22,9 @@
 # Ask an interactive user to choose between N given choices. The result
 # will be stored into $<out_var>.
 #
-# Usage: user_getChoice [-m <message>] <out_var> <choice_1> [... <choice_N>]
+# Usage: ui_getChoice [-m <message>] <out_var> <choice_1> [... <choice_N>]
 #
-user_getChoice()
+ui_getChoice()
 {
 	local message
 	local out_var
