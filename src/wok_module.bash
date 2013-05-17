@@ -70,6 +70,28 @@ wok_module_pdeps()
 	echo "$deps"
 }
 
+#
+# Return a simple word list separated by a space
+#
+wok_module_pname()
+{
+	local module="$1"
+	local handler="wok_${module}_pname"
+	local name
+
+	if ! wok_module_has "$module"; then
+		wok_perror "Unavailable module: ${module}"
+		wok_exit $EXIT_ERROR_SYSTEM
+	fi
+
+	if ! name="$("$handler")"; then
+		wok_perror "Module error"
+		wok_exit $EXIT_ERROR_SYSTEM
+	fi
+
+	echo "$name"
+}
+
 wok_module_handle()
 {
 	local module="$1"
@@ -88,9 +110,14 @@ wok_module_handle()
 	fi
 }
 
-wok_module_getDefaults()
+wok_module_getCascadable()
 {
-	wok_config_get wok modules
+	wok_config_get wok modules_cascadable
+}
+
+wok_module_getCascadeDefaults()
+{
+	wok_config_get wok modules_cascade_defaults
 }
 
 wok_module_resolveDeps()

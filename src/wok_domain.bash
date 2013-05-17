@@ -22,6 +22,7 @@ WOK_DOMAIN_PATTERN='^[[:alnum:]]+([.\-][[:alnum:]]+)*$'
 WOK_PASSWD_PATTERN='^[[:alnum:]]{8,64}$'
 WOK_PASSWD_LENGTH=12
 WOK_PASSWD_CMD="pwgen -s $WOK_PASSWD_LENGTH 1"
+WOK_LOG_ENABLE=false
 WOK_LOG_PATTERN="^/tmp/"
 
 wok_add()
@@ -41,11 +42,17 @@ wok_add()
 	local arg_value
 	local args_remain=()
 	local module
+	local module_name
 	local cmd
 	local param=()
 	local report
 	local email
 	local email_from
+	# [FIXME] Dirty list to array conversion... Best way: directly use array
+	# format in .ini (modules_cascadable[] = ...), and retrieve as an
+	# array using an iterator (or new lines). But for this version it's
+	# OK. Just be sure that the configuration is valid...
+	local cascade_allowed=($(wok_module_getCascadable))
 
 	# Process arguments
 	for arg in "$@"; do
@@ -89,9 +96,17 @@ wok_add()
 					wok_perror "Invalid module '${module}'."
 					wok_exit $EXIT_ERROR_USER
 				fi
+				if ! array_has cascade_allowed "$module"; then
+					wok_perror "Module '${module}' is not allowed to cascade."
+					wok_exit $EXIT_ERROR_USER
+				fi
 				array_add cascade_list "$module";;
 
 			--report-log=*)
+				if ! $WOK_LOG_ENABLE; then
+					wok_perror "Report logging has been disabled as it presents a security risk."
+					wok_exit $EXIT_ERROR_USER
+				fi
 				if ! arg_value="$(arg_parseValue "$arg")"; then
 					wok_perror "Invalid usage."
 					wok_exit $EXIT_ERROR_USER
@@ -141,10 +156,24 @@ wok_add()
 
 	# Determine modules
 	if $cascade_defaults; then
-		for module in $(wok_module_getDefaults); do
+		for module in $(wok_module_getCascadeDefaults); do
 			array_add cascade_list "$module"
 		done
 	fi
+	if [[ ${#cascade_list[@]} -lt 1 ]] && $interactive; then
+		for module in $(wok_module_getCascadable); do
+			module_name="$(wok_module_pname "$module")"
+			if ui_confirm "Use '${module_name}'?"; then
+				array_add cascade_list "$module"
+			fi
+		done
+	fi
+	for module in "${cascade_list[@]}"; do
+		if ! array_has cascade_allowed "$module"; then
+			wok_perror "Module '${module}' is not allowed to cascade."
+			wok_exit $EXIT_ERROR_SYSTEM
+		fi
+	done
 	wok_module_resolveDeps cascade_list
 
 	# Create the password
@@ -156,9 +185,16 @@ wok_add()
 		fi
 	fi
 
-	#
-	# Go!
-	#
+	# [TODO] ASK TO SEND REPORT VIA EMAIL, THEN ASK FOR AN ADDRESS (SPACE
+	# AS SEP)
+				if [[ ${#cascade_list[@]} -lt 1 ]] && $interactive; then
+					for module in $(wok_module_getCascadable); do
+						module_name="$(wok_module_pname "$module")"
+						if ui_confirm "Use '${module_name}'?"; then
+							array_add cascade_list "$module"
+						fi
+					done
+				fi
 
 	# Register the domain in the repo
 	cmd=(wok_repo_add "$domain")
@@ -202,6 +238,10 @@ wok_add()
 wok_remove()
 {
 	echo REMOVE $*
+	# -f|--force: non-interactive!
+	# array reverse wok order 
+	# wok_cascade rm
+	# wok repo rm...
 }
 
 wok_list()

@@ -18,6 +18,11 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
+wok_foo_pname()
+{
+	echo "Foo entity"
+}
+
 wok_foo_describe()
 {
 	echo "The foo module helps you kill Phuc"

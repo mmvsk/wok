@@ -18,6 +18,11 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
+wok_bar_pname()
+{
+	echo "Bar entity"
+}
+
 wok_bar_describe()
 {
 	echo "The bar module helps you drink beers"
