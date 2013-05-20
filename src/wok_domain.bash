@@ -48,11 +48,12 @@ wok_add()
 	local report
 	local email
 	local email_from
+	local re
 	# [FIXME] Dirty list to array conversion... Best way: directly use array
 	# format in .ini (modules_cascadable[] = ...), and retrieve as an
 	# array using an iterator (or new lines). But for this version it's
 	# OK. Just be sure that the configuration is valid...
-	local cascade_allowed=($(wok_module_getCascadable))
+	local cascade_allowed=($(wok_module_getAllowedToCascade))
 
 	# Process arguments
 	for arg in "$@"; do
@@ -161,7 +162,7 @@ wok_add()
 		done
 	fi
 	if [[ ${#cascade_list[@]} -lt 1 ]] && $interactive; then
-		for module in $(wok_module_getCascadable); do
+		for module in $(wok_module_getAllowedToCascade); do
 			module_name="$(wok_module_pname "$module")"
 			if ui_confirm "Use '${module_name}'?"; then
 				array_add cascade_list "$module"
@@ -185,16 +186,12 @@ wok_add()
 		fi
 	fi
 
-	# [TODO] ASK TO SEND REPORT VIA EMAIL, THEN ASK FOR AN ADDRESS (SPACE
-	# AS SEP)
-				if [[ ${#cascade_list[@]} -lt 1 ]] && $interactive; then
-					for module in $(wok_module_getCascadable); do
-						module_name="$(wok_module_pname "$module")"
-						if ui_confirm "Use '${module_name}'?"; then
-							array_add cascade_list "$module"
-						fi
-					done
-				fi
+	if [[ ${#report_to[@]} -lt 1 ]] && $interactive; then
+		if ui_confirm "Send the recipe via e-mail?"; then
+			re='[[:alnum:]._\-]{1,255}@[[:alnum:].\-]{1,255}'
+			ui_getString report_to[0] "${re}(,${re}){0,12}" "E-mail (separate by a comma)"
+		fi
+	fi
 
 	# Register the domain in the repo
 	cmd=(wok_repo_add "$domain")

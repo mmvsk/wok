@@ -110,14 +110,18 @@ wok_module_handle()
 	fi
 }
 
-wok_module_getCascadable()
+wok_module_getAllowedToCascade()
 {
-	wok_config_get wok modules_cascadable
+	#FIXME
+	#wok_config_get wok modules_cascade_allowed
+	echo foo bar
 }
 
 wok_module_getCascadeDefaults()
 {
-	wok_config_get wok modules_cascade_defaults
+	#FIXME
+	#wok_config_get wok modules_cascade_defaults
+	echo foo bar
 }
 
 wok_module_resolveDeps()
