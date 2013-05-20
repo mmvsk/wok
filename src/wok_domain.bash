@@ -234,14 +234,64 @@ wok_add()
 
 wok_remove()
 {
-	echo REMOVE $*
-	# -f|--force: non-interactive!
-	# array reverse wok order 
-	# wok_cascade rm
-	# wok repo rm...
+	# Argument vars
+	local force=false
+	local domain
+
+	# Temp vars
+	local arg
+	local args_remain=()
+
+	# Process arguments
+	for arg in "$@"; do
+		case "$arg" in
+
+			-h|--help)
+				echo "Usage: ${wok_command} remove [--force|-f] <domain>"
+				return $EXIT_SUCCESS;;
+
+			-f|--force)
+				force=true;;
+
+			*)
+				args_remain=("${args_remain[@]}" "$arg");;
+
+		esac
+	done
+
+	# Only one additional argument is required: the domain name
+	if [[ ${#args_remain[@]} -ne 1 ]]; then
+		wok_perror "Invalid usage. See '${wok_command} remove --help'."
+		wok_exit $EXIT_ERROR_USER
+	fi
+
+	# Domain name processing
+	domain="${args_remain[0]}"
+	if ! wok_repo_has "$domain"; then
+		wok_perror "Domain '${domain}' does not exist."
+		wok_exit $EXIT_ERROR_USER
+	fi
+
+	if ! $force; then
+		if ! ui_confirm "$(echo -e \
+			"You are going to remove this domain and all associated data, without any\n" \
+			"\bpossibility of recovery. Do you really want to continue?" \
+		)"; then
+			echo "Aborted."
+			return $EXIT_SUCCESS
+		fi
+	fi
+
+	#[TODO]
+	# 1. Get all modules involved (using wok_repo).
+	# 2. Get those modules, order them by dep, reverse them, cascade
+	# 3. Remove using ui_showProgress...
 }
 
 wok_list()
 {
-	echo LIST $*
+	#[TODO]
+	# List domains
+	# Loop on those domains
+	# For each domain, get involved modules and print them
 }
