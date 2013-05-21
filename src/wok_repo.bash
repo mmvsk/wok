@@ -18,15 +18,41 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# TODO USE INI_GET, INI_SET
 #
-# /index/
-#   <module>/
-#     domain.list
-#     uid.list
+# Uses
+# ----------------------------
+# 
+# ini_set <file> <section> <key> <value>
+# ini_get <file> <section> <key>
 #
-# /lessources.be.ini
-# /lesmachins.be.ini
+# Directory structure
+# ------------------------------------------
+#
+# $repo/domain.index
+# $repo/modules/<module>/<domain>.ini
+# $repo/modules/<module>/index/<index>.index
+#
+# Functions
+# -----------------------------------------------------------
+#
+# Usage: wok_repo_has <domain>
+# Usage: wok_repo_add <domain>
+# Usage: wok_repo_remove <domain>
+# Usage: wok_repo_list <domain>
+#
+# Usage: wok_repo_module_has <module> <domain>
+# Usage: wok_repo_module_add <module> <domain>
+# Usage: wok_repo_module_remove <module> <domain>
+# Usage: wok_repo_module_list <module> <domain>
+#
+# Usage: wok_repo_module_set <module> <domain> <key> <value>
+# Usage: wok_repo_module_get <module> <domain> <key>
+#
+# Usage: wok_repo_module_index_has <module> <index> <name>
+# Usage: wok_repo_module_index_add <module> <index> <name>
+# Usage: wok_repo_module_index_remove <module> <index> <name>
+# Usage: wok_repo_module_index_list <module> <index>
+# Usage: wok_repo_module_index_getFile <module> <index>
 #
 
 
@@ -48,5 +74,4 @@ wok_repo_cust_has()
 	local section="$2"
 	local token="$3"
 }
-
 

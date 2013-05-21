@@ -25,7 +25,7 @@ E_TEST_FAILED=2
 if [[ -n $1 ]]; then
 	bin="$1"
 else
-	bin="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/dist/wok/util/str_match"
+	bin="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)/dist/wok/util/str_match"
 fi
 
 if [[ ! -x $bin ]]; then

@@ -1,6 +1,8 @@
 #!/bin/sh
 
+base="`dirname "$0"`"
 action=install
+req_root=true
 wok_path=
 sbin_path=
 conf_path=
@@ -8,53 +10,66 @@ repo_path=
 
 usage()
 {
-	echo "Usage: ${0} [--install|--uninstall|--purge] <paths...>"
+	echo "Usage: ${0} [--install|--uninstall|--reinstall|--purge]"
+	echo "                    [--no-root]  <paths...>"
 	echo
-	echo "    --wok-path=PATH"
-	echo "    --sbin-path=PATH"
-	echo "    --conf-path=PATH"
-	echo "    --repo-path=PATH"
+	echo "    --wok-path=<path>  (e.g. /usr/local/share/wok)"
+	echo "    --sbin-path=<path> (e.g. /usr/local/sbin/wok)"
+	echo "    --conf-path=<path> (e.g. /usr/local/etc/wok)"
+	echo "    --repo-path=<path> (e.g. /var/local/lib/wok)"
 	echo
 }
 
-insall()
+install()
 {
-	exit 0
-	test `id -u` -eq 0 || (echo "Wok must be installed as root" >&2; exit 1)
-	test ! -d /usr/local/share/wok || (echo "Is Wok already installed?" >&2; exit 1)
-	test ! -d /usr/local/etc/wok || (echo "Is Wok already installed?" >&2; exit 1)
-	test ! -d /var/local/lib/wok || (echo "Is Wok already installed?" >&2; exit 1)
+	if $req_root && test `id -u` -ne 0; then
+		echo "Wok must be installed as root." >&2
+		return 1
+	fi
+	if test -d "$wok_path"; then
+		echo "Is Wok already installed?" >&2
+		return 1
+	fi
 	echo -n "Installing Wok..."
-	mkdir -p /usr/local/share/wok /usr/local/etc/wok /var/local/lib/wok
-	cp -r dist/share/* /usr/local/share/wok
-	cp -r dist/etc/* /usr/local/etc/wok
-	cp -r dist/repo/* /var/local/lib/wok
-	chmod -R o=,g= /usr/local/etc/wok
-	chmod -R o= /var/local/lib/wok
-	ln -sf /usr/local/share/wok/wok /usr/local/sbin/wok
+	mkdir -p "$wok_path" "$conf_path" "$repo_path"
+	cp -r "$base"/dist/wok/* "$wok_path"
+	test ! -d "$conf_path" && cp -r "$base"/dist/etc/* "$conf_path"
+	test ! -d "$repo_path" && cp -r "$base"/dist/repo/* "$repo_path"
+	chmod -R o=,g= "$conf_path"
+	chmod -R o= "$repo_path"
+	ln -sf "${wok_path}/wok" "$sbin_path"
 	echo "done."
 }
 
 uninstall()
 {
-	exit 0
-	test -d /usr/local/share/wok \
-		|| test -d /usr/local/etc/wok \
-		|| test -d /var/local/lib/wok \
-		|| test -f /usr/local/sbin/wok \
-		|| (echo "Wok is not installed on this system" >&2; exit 1)
+	if test ! -d "$wok_path" && test ! -f "$sbin_path"; then
+		echo "Wok is not installed on this system" >&2
+		return 1
+	fi
 	echo -n "Uninstalling..."
-	test ! -d /usr/local/share/wok || rm -rf /usr/local/share/wok
-	test ! -d /usr/local/etc/wok || rm -rf /usr/local/etc/wok
-	test ! -d /var/local/lib/wok || rm -rf /var/local/lib/wok
-	test ! -f /usr/local/sbin/wok || rm -f /usr/local/sbin/wok
+	rm -rf "$wok_path"
+	rm -f "$sbin_path"
 	echo "done."
+}
+
+reinstall()
+{
+	uninstall
+	install
 }
 
 purge()
 {
-	exit 0
 	uninstall
+	if test ! -d "$conf_path" &&  test ! -d "$repo_path"; then
+		echo "Wok is not configured on this system" >&2
+		return 1
+	fi
+	echo -n "Purging"
+	rm -rf "$conf_path"
+	rm -rf "$repo_path"
+	echo "done."
 }
 
 for arg in "$@"; do
@@ -68,7 +83,9 @@ for arg in "$@"; do
 		-h|--help)     usage; exit 0;;
 		--install)     action=install;;
 		--uninstall)   action=uninstall;;
+		--reinstall)   action=reinstall;;
 		--purge)       action=purge;;
+		--no-root)     req_root=false;;
 		--wok-path=*)  wok_path="$argval";;
 		--sbin-path=*) sbin_path="$argval";;
 		--conf-path=*) conf_path="$argval";;
@@ -84,3 +101,4 @@ done
 && usage >&2 && exit 1
 
 $action
+exit $?

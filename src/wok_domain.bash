@@ -290,6 +290,7 @@ wok_remove()
 
 wok_list()
 {
+	echo "list"
 	#[TODO]
 	# List domains
 	# Loop on those domains

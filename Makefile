@@ -32,7 +32,7 @@
 #
 wok_path  = /usr/local/share/wok
 sbin_path = /usr/local/sbin/wok
-conf_path = /usr/local/etc/wok/wok.ini
+conf_path = /usr/local/etc/wok
 repo_path = /var/local/lib/wok
 
 shitify = 1
@@ -56,10 +56,10 @@ check:
 	@echo src:  $(modules_src)
 
 test: wok
-	@for f in $(wildcard test/*); do \
+	@for f in $(wildcard test/unit/*); do \
 		name=`basename "$$f"`; \
 		echo "*** $${name}"; \
-		"$$f" || exit; \
+		"$$f" || exit 1; \
 		echo; \
 	done
 	@echo "All tests passed successfully!"
@@ -165,7 +165,7 @@ dist/wok/wok: src/*.bash $(common_src) $(modules_src)
 	@echo -n "Building $@..."
 	@(echo "#!/bin/bash"; cat src/wok.bash) >"$@" && chmod +x "$@"
 	@sed -i 's/{{wok_module_list}}/$(foreach module,$(modules),"$(module)")/g' "$@"
-	@sed -i 's:{{wok_config_file}}:"$(conf_path)":g' "$@"
+	@sed -i 's:{{wok_config_file}}:"$(conf_path)/wok.ini":g' "$@"
 	@sed -i 's:{{wok_repo_path}}:"$(repo_path)":g' "$@"
 	@sed -i 's:{{wok_util_path}}:"$(wok_path)/util":g' "$@"
 	@sed -i "/{{modules_src}}/{`printf '$(foreach path,$(modules_src),r $(path)\n)d'`}" "$@"
