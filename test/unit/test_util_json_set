@@ -55,7 +55,7 @@ test_fail()
 	exit $E_TEST_FAILED
 }
 
-assert_set_success()
+assert_set_succeed()
 {
 	local descr="$1"
 	local key="$2"
@@ -69,7 +69,7 @@ assert_set_success()
 	fi
 }
 
-assert_unset_success()
+assert_unset_succeed()
 {
 	local descr="$1"
 	local key="$2"
@@ -114,24 +114,24 @@ tmp_init
 
 assert_get_fails     "an unavailable file" "name"
 
-assert_set_success   "value setting #1"    "name"     "John Doe"
+assert_set_succeed   "value setting #1"    "name"     "John Doe"
 assert_get_equals    "value #1"            "John Doe" "name"
-assert_set_success   "value setting #2"    "age"      "43"
+assert_set_succeed   "value setting #2"    "age"      "43"
 assert_get_equals    "value #1"            "John Doe" "name"
 assert_get_equals    "value #2"            "43"       "age"
 
-assert_set_success   "value overriding #1" "name"     "Derrick"
+assert_set_succeed   "value overriding #1" "name"     "Derrick"
 assert_get_equals    "value #1"            "Derrick"  "name"
 assert_get_equals    "value #2"            "43"       "age"
 
-assert_set_success   "value nulling #1"    "name"     ""
+assert_set_succeed   "value nulling #1"    "name"     ""
 assert_get_equals    "value #1"            ""         "name"
 assert_get_equals    "value #2"            "43"       "age"
 
-assert_unset_success "value removing #1"   "name"
+assert_unset_succeed "value removing #1"   "name"
 assert_get_fails     "removed value #1"    "name"
 assert_get_equals    "value #2"            "43"       "age"
-assert_unset_success "value removing #2"   "age"
+assert_unset_succeed "value removing #2"   "age"
 assert_get_fails     "removed value #1"    "name"
 assert_get_fails     "removed value #2"    "age"
 

@@ -46,3 +46,59 @@ array_has()
 
 	return 1
 }
+
+#
+# Add a value to an array
+#
+# Usage: array_add <array_var_name> <value>
+#
+#   arr=("hello world" "bonjour le monde")
+#   array_add arr "buenos dias"
+#   
+# Variables you use must not start with '__'.
+#
+array_add()
+{
+	local __array_ref="$1"
+	local __array_values=()
+	eval "__array_values=(\"\${${1}[@]}\")"
+	local __value="$2"
+	local __i_val=()
+	local __eval_values=""
+
+	if array_has __array_values "$__value"; then
+		return 1
+	fi
+
+	for __i_val in "${__array_values[@]}" "$__value"; do
+		__eval_values="${__eval_values} $(printf %q "${__i_val}")"
+	done
+
+	eval "${__array_ref}=(${__eval_values})"
+}
+
+#
+# Reverse the order of an array
+#
+# Usage: array_reverse <array_var_name>
+#
+#   arr=("hello world" "bonjour le monde")
+#   array_reverse arr
+#   # ("bonjour le monde" "hello world")
+#   
+# Variables you use must not start with '__'.
+#
+array_reverse()
+{
+	local __array_ref="$1"
+	local __array_values=()
+	eval "__array_values=(\"\${${1}[@]}\")"
+	local __i_val=()
+	local __eval_values=""
+
+	for __i_val in "${__array_values[@]}"; do
+		__eval_values="$(printf %q "${__i_val}") ${__eval_values}"
+	done
+
+	eval "${__array_ref}=(${__eval_values})"
+}

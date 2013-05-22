@@ -1,0 +1,192 @@
+#!/bin/bash
+
+#
+# Copyright © 2013 Max Ruman
+#
+# This file is part of Wok.
+#
+# Wok is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# Wok is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with Wok. If not, see <http://www.gnu.org/licenses/>.
+#
+
+E_INVALID_USAGE=1
+E_TEST_FAILED=2
+E_SYSTEM_ERROR=3
+E_TEST_ERROR=4
+
+if [[ -n $1 ]]; then
+	inc="$1"
+else
+	inc="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)/src/common/index.bash"
+fi
+
+if [[ ! -f $inc ]]; then
+	echo "Source file ${inc} does not exist" >&2
+	exit $E_INVALID_USAGE
+fi
+
+. "$inc"
+
+bin_has="index_has"
+bin_add="index_add"
+bin_remove="index_remove"
+
+index_file=
+
+index_init()
+{
+	# -u is allowed here as it's only a non-critical test, and we need to
+	# check file creation.
+	if ! index_file="$(mktemp -u)"; then
+		echo "Could not create a temporary index file" >&2
+		exit $E_SYSTEM_ERROR
+	fi
+}
+
+index_insert()
+{
+	local string="$1"
+
+	echo "$string" >>"$index_file"
+}
+
+index_clean()
+{
+	rm -f "$index_file"
+}
+
+test_descr()
+{
+	local descr="$1"
+
+	echo -n "Testing ${descr}..."
+}
+
+test_succeed()
+{
+	echo "OK"
+}
+
+test_fail()
+{
+	index_clean
+	echo -e "\033[0;31mfailed!\033[0m"
+	exit $E_TEST_FAILED
+}
+
+test_qe_has()
+{
+	"$bin_has" "$index_file" "$@" >/dev/null 2>/dev/null
+}
+
+test_qe_add()
+{
+	"$bin_add" "$index_file" "$@" >/dev/null 2>/dev/null
+}
+
+test_qe_remove()
+{
+	"$bin_remove" "$index_file" "$@" >/dev/null 2>/dev/null
+}
+
+assert_true()
+{
+	local descr="$1"
+	local cmd="$2"
+	shift 2
+	local args="$@"
+
+	test_descr "$descr"
+	if "$cmd" "${args[@]}"; then
+		test_succeed
+	else
+		test_fail
+	fi
+}
+
+assert_false()
+{
+	local descr="$1"
+	local cmd="$2"
+	shift 2
+	local args="$@"
+
+	test_descr "$descr"
+	if "$cmd" "${args[@]}"; then
+		test_fail
+	else
+		test_succeed
+	fi
+}
+
+# Meta check
+{
+index_init
+	echo ".............." >"$index_file"
+index_clean
+index_init
+	if [[ -f $index_file ]]; then
+		echo "Test error." >&2
+		exit $E_TEST_ERROR
+	fi
+index_clean
+}
+
+# test_index_has()
+{
+index_init # dry-run
+	test_descr "index non-existence"; test -f "$index_file" && test_fail || test_succeed
+	assert_false "non-existing index" test_qe_has "something"
+	test_descr "index_has() side effects (file creation on check)"; test -f "$index_file" && test_fail || test_succeed
+
+	echo "google.com" >>"$index_file"
+	echo "example.org" >>"$index_file"
+	echo "James Bond" >>"$index_file"
+
+	assert_true "existing token #1 existence check" test_qe_has "google.com"
+	assert_true "existing token #2 existence check" test_qe_has "James Bond"
+
+	assert_false "non-existing token #1 existence check" test_qe_has "yahoo.com"
+	assert_false "non-existing token #2 existence check" test_qe_has "James"
+index_clean
+}
+
+# test_index_add(): can be now executed on top of index_has()
+{
+index_init # dry-run
+	assert_true "new token to a non-existing index" test_qe_add "bing.com"
+	assert_true "added token existence" test_qe_has "bing.com"
+	test_descr "index existence"; test -f "$index_file" && test_succeed || test_fail
+
+	assert_true "new token to an existing index #1" test_qe_add "altavista.com"
+	assert_true "added token existence" test_qe_has "altavista.com"
+	assert_true "new token to an existing index #2" test_qe_add '$1: In God we trust'
+	assert_true "added token existence" test_qe_has '$1: In God we trust'
+index_clean
+}
+
+# test_index_remove(): can be now executed on top of index_has() and index_add()
+{
+index_init # dry-run
+	test_qe_add "James Bond"
+	test_qe_add "Super Woman"
+	test_qe_add "example.org"
+	test_qe_add "google.com"
+
+	assert_false "removal of a non-existing token" test_qe_remove "invalid token..."
+	assert_true "removal of an existing token #1" test_qe_remove "Super Woman"
+	assert_false "removed token existence" test_qe_has "Super Woman"
+	assert_true "removal of an existing token #2" test_qe_remove "google.com"
+	assert_false "removed token existence" test_qe_has "google.com"
+index_clean
+}

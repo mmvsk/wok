@@ -52,7 +52,9 @@
 # Usage: wok_repo_module_index_add <module> <index> <name>
 # Usage: wok_repo_module_index_remove <module> <index> <name>
 # Usage: wok_repo_module_index_list <module> <index>
-# Usage: wok_repo_module_index_getFile <module> <index>
+# Usage: wok_repo_module_index_getPath <module> <index>
+#
+# WOK_REPO_PATH
 #
 
 wok_repo_has()
