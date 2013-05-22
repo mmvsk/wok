@@ -186,6 +186,7 @@ wok_add()
 		fi
 	fi
 
+	# Determine report recipients
 	if [[ ${#report_to[@]} -lt 1 ]] && $interactive; then
 		if ui_confirm "Send the recipe via e-mail?"; then
 			re='[[:alnum:]._\-]{1,255}@[[:alnum:].\-]{1,255}'
@@ -241,6 +242,9 @@ wok_remove()
 	# Temp vars
 	local arg
 	local args_remain=()
+	local modules
+	local module
+	local param=()
 
 	# Process arguments
 	for arg in "$@"; do
@@ -272,6 +276,7 @@ wok_remove()
 		wok_exit $EXIT_ERR_USR
 	fi
 
+	# Request confirmation
 	if ! $force; then
 		if ! ui_confirm "$(echo -e \
 			"You are going to remove this domain and all associated data, without any\n" \
@@ -282,10 +287,29 @@ wok_remove()
 		fi
 	fi
 
-	#[TODO]
-	# 1. Get all modules involved (using wok_repo).
-	# 2. Get those modules, order them by dep, reverse them, cascade
-	# 3. Remove using ui_showProgress...
+	# Resolve involved modules
+	for module in "${WOK_MODULE_LIST[@]}"; do
+		if wok_repo_module_has "$module" "$domain"; then
+			array_add modules "$module"
+		fi
+	done
+	wok_module_resolveDeps modules
+	array_reverse modules
+
+	echo "${modules[@]}";exit 0 #FIXME TODO
+
+	# Determine module arguments
+	param=()
+	$force && array_add param "--force"
+
+	# Call the modules
+	wok_module_cascade modules remove "${param[@]}" "$domain"
+
+	# Unregister the domain
+	cmd=(wok_repo_remove "$domain")
+	if ! ui_showProgress "Removing managed domain '${domain}'" "${cmd[@]}"; then
+		wok_exit $EXIT_ERR_SYS
+	fi
 }
 
 wok_list()
@@ -294,7 +318,8 @@ wok_list()
 	local module
 	local modules=()
 
-	echo "list"
+	wok_repo_list
+
 	#[TODO]
 	# List domains
 	# Loop on those domains

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 base="`dirname "$0"`"
 action=install
@@ -31,10 +31,9 @@ install()
 		return 1
 	fi
 	echo -n "Installing Wok..."
-	mkdir -p "$wok_path" "$conf_path" "$repo_path"
-	cp -r "$base"/dist/wok/* "$wok_path"
-	test ! -d "$conf_path" && cp -r "$base"/dist/etc/* "$conf_path"
-	test ! -d "$repo_path" && cp -r "$base"/dist/repo/* "$repo_path"
+	cp -r "$base"/dist/wok "$wok_path"
+	test ! -d "$conf_path" && cp -r "$base"/dist/conf "$conf_path"
+	test ! -d "$repo_path" && cp -r "$base"/dist/repo "$repo_path"
 	chmod -R o=,g= "$conf_path"
 	chmod -R o= "$repo_path"
 	ln -sf "${wok_path}/wok" "$sbin_path"
