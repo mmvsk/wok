@@ -1,0 +1,107 @@
+#!/bin/bash
+
+#
+# Copyright © 2013 Max Ruman
+#
+# This file is part of Wok.
+#
+# Wok is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# Wok is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with Wok. If not, see <http://www.gnu.org/licenses/>.
+#
+
+E_INVALID_USAGE=1
+E_TEST_FAILED=2
+E_SYSTEM_ERROR=3
+
+if [[ -n "$1" ]]; then
+	bin="$1"
+else
+	bin="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)/dist/wok/util/json_get"
+fi
+
+if [[ ! -x "$bin" ]]; then
+	echo "Target ${bin} does not exist or is not executable" >&2
+	exit $E_INVALID_USAGE
+fi
+
+json_file=
+
+json_init()
+{
+	local contents=("$@")
+
+	if ! json_file="$(mktemp)"; then
+		echo "Could not create a temporary file" >&2
+		exit $E_SYSTEM_ERROR
+	fi
+	echo -e "${contents[@]}" >"$json_file"
+}
+
+json_clean()
+{
+	rm "$json_file"
+}
+
+test_fail()
+{
+	echo -e "\033[0;31mfailed!\033[0m"
+	json_clean
+	exit $E_TEST_FAILED
+}
+
+assert_fails()
+{
+	local descr="$1"
+	local json_key="$2"
+
+	echo -n "Testing ${descr}: "
+	if ! "$bin" "$json_file" "$json_key" >/dev/null 2>/dev/null; then
+		echo "OK"
+	else
+		test_fail
+	fi
+}
+
+assert_equals()
+{
+	local descr="$1"
+	local expect="$(echo -e "$2")"
+	local json_key="$3"
+
+	echo -n "Testing ${descr}: "
+	if result="$("$bin" "$json_file" "$json_key" 2>/dev/null)" && [[ $result == $expect ]]; then
+		echo "OK"
+	else
+		echo "Got: $?"
+		test_fail
+	fi
+}
+
+json_init '
+{
+	"name": "Wok",
+	"version": "1.0.0",
+	"author": "Max Ruman",
+	"path": "/srv/www",
+	"count": 41
+}
+'
+
+assert_equals "string read #1" "1.0.0"     "version"
+assert_equals "string read #2" "Max Ruman" "author"
+assert_equals "int read"       "41"        "count"
+
+assert_fails  "invalid usage"
+assert_fails  "invalid key"   "invalid_key"
+
+json_clean

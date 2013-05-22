@@ -55,7 +55,6 @@
 # Usage: wok_repo_module_index_getFile <module> <index>
 #
 
-
 wok_repo_has()
 {
 	local domain="$1"
@@ -74,4 +73,3 @@ wok_repo_cust_has()
 	local section="$2"
 	local token="$3"
 }
-

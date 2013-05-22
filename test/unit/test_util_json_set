@@ -1,0 +1,138 @@
+#!/bin/bash
+
+#
+# Copyright © 2013 Max Ruman
+#
+# This file is part of Wok.
+#
+# Wok is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# Wok is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with Wok. If not, see <http://www.gnu.org/licenses/>.
+#
+
+E_INVALID_USAGE=1
+E_TEST_FAILED=2
+E_SYSTEM_ERROR=3
+
+[[ -n "$1" ]] && bin_set="$1" || bin_set="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)/dist/wok/util/json_set"
+[[ -n "$2" ]] && bin_get="$2" || bin_get="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)/dist/wok/util/json_get"
+
+if [[ ! -x "$bin_set" ]] || [[ ! -x "$bin_get" ]]; then
+	echo "Target ${bin_set} or required ${bin_get} do not exist or are not executable" >&2
+	exit $E_INVALID_USAGE
+fi
+
+tmp_file=
+
+tmp_init()
+{
+	# -u is allowed here as it's only a non-critical test, and we need to
+	# check file creation.
+	if ! tmp_file="$(mktemp -u)"; then
+		echo "Could not create a temporary file" >&2
+		exit $E_SYSTEM_ERROR
+	fi
+}
+
+tmp_clean()
+{
+	rm "$tmp_file"
+}
+
+test_fail()
+{
+	echo -e "\033[0;31mfailed!\033[0m"
+	tmp_clean
+	exit $E_TEST_FAILED
+}
+
+assert_set_success()
+{
+	local descr="$1"
+	local key="$2"
+	local value="$3"
+
+	echo -n "Testing ${descr}: "
+	if "$bin_set" "$tmp_file" "$key" "$value" >/dev/null 2>/dev/null; then
+		echo "OK"
+	else
+		test_fail
+	fi
+}
+
+assert_unset_success()
+{
+	local descr="$1"
+	local key="$2"
+
+	echo -n "Testing ${descr}: "
+	if "$bin_set" "$tmp_file" "$key" >/dev/null 2>/dev/null; then
+		echo "OK"
+	else
+		test_fail
+	fi
+}
+
+assert_get_fails()
+{
+	local descr="$1"
+	local key="$2"
+
+	echo -n "Testing ${descr}: "
+	if ! "$bin_get" "$tmp_file" "$key" >/dev/null 2>/dev/null; then
+		echo "OK"
+	else
+		test_fail
+	fi
+}
+
+assert_get_equals()
+{
+	local descr="$1"
+	local expect="$(echo -e "$2")"
+	local key="$3"
+
+	echo -n "Testing ${descr}: "
+	if result="$("$bin_get" "$tmp_file" "$key" 2>/dev/null)" && [[ $result == $expect ]]; then
+		echo "OK"
+	else
+		echo "Got: $?"
+		test_fail
+	fi
+}
+
+tmp_init
+
+assert_get_fails     "an unavailable file" "name"
+
+assert_set_success   "value setting #1"    "name"     "John Doe"
+assert_get_equals    "value #1"            "John Doe" "name"
+assert_set_success   "value setting #2"    "age"      "43"
+assert_get_equals    "value #1"            "John Doe" "name"
+assert_get_equals    "value #2"            "43"       "age"
+
+assert_set_success   "value overriding #1" "name"     "Derrick"
+assert_get_equals    "value #1"            "Derrick"  "name"
+assert_get_equals    "value #2"            "43"       "age"
+
+assert_set_success   "value nulling #1"    "name"     ""
+assert_get_equals    "value #1"            ""         "name"
+assert_get_equals    "value #2"            "43"       "age"
+
+assert_unset_success "value removing #1"   "name"
+assert_get_fails     "removed value #1"    "name"
+assert_get_equals    "value #2"            "43"       "age"
+assert_unset_success "value removing #2"   "age"
+assert_get_fails     "removed value #1"    "name"
+assert_get_fails     "removed value #2"    "age"
+
+tmp_clean

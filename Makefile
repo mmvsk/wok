@@ -116,7 +116,9 @@ dist/conf/wok.ini \
 dist/wok/util \
 dist/wok/util/str_match \
 dist/wok/util/str_slugify \
-dist/wok/util/ini_get
+dist/wok/util/ini_get \
+dist/wok/util/json_set \
+dist/wok/util/json_get
 
 .PHONY: wok
 
@@ -151,6 +153,16 @@ dist/wok/util/str_slugify: src/util/str_slugify.php
 	@echo "done."
 
 dist/wok/util/ini_get: src/util/ini_get.php
+	@echo -n "Building $@..."
+	@(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
+	@echo "done."
+
+dist/wok/util/json_get: src/util/json_get.php
+	@echo -n "Building $@..."
+	@(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
+	@echo "done."
+
+dist/wok/util/json_set: src/util/json_set.php
 	@echo -n "Building $@..."
 	@(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
 	@echo "done."
