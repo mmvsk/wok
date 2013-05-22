@@ -1,5 +1,3 @@
 /dist/
-/test/smoke/
+/test/smoke/sandbox/
 /.local/
-
-!/test/smoke/init

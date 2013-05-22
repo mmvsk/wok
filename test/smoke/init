@@ -1,7 +1,7 @@
 #!/bin/bash
 
 base="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-test="$base"/test/smoke
+test="$base"/test/smoke/sandbox
 
 cd "$base"
 
