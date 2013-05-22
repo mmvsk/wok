@@ -60,13 +60,13 @@ wok_add()
 		case "$arg" in
 
 			-h|--help)
-				echo "Usage: ${wok_command} add [--interactive|-i] [--password=<password>]"
+				echo "Usage: ${WOK_COMMAND} add [--interactive|-i] [--password=<password>]"
 				echo "               [--cascade|-c] [--with-<module>] [--report-log=<file>]"
 				echo "               [--report-to=<email>] <domain>"
 				echo
 				echo "Modules:"
 				echo
-				for module in "${wok_module_list[@]}"; do
+				for module in "${WOK_MODULE_LIST[@]}"; do
 					module="$(echo "$module" | sed 's/_/-/g')"
 					module_descr="$(wok_module_describe "$module")"
 					if [[ ${#module} -lt 12 ]]; then
@@ -77,7 +77,7 @@ wok_add()
 					echo "    ${module}${psep}${module_descr}"
 				done
 				echo
-				return $EXIT_SUCCESS;;
+				return $EXIT_OK;;
 
 			-i|--interactive)
 				interactive=true;;
@@ -88,44 +88,44 @@ wok_add()
 			-p*|--password=*)
 				if ! passwd="$(arg_parseValue "$arg")"; then
 					wok_perror "Invalid usage."
-					wok_exit $EXIT_ERROR_USER
+					wok_exit $EXIT_ERR_USR
 				fi;;
 
 			--with-*)
 				module="$(echo ${arg#--with-} | sed -e 's/[ \-]/_/g')"
 				if ! wok_module_has "$module"; then
 					wok_perror "Invalid module '${module}'."
-					wok_exit $EXIT_ERROR_USER
+					wok_exit $EXIT_ERR_USR
 				fi
 				if ! array_has cascade_allowed "$module"; then
 					wok_perror "Module '${module}' is not allowed to cascade."
-					wok_exit $EXIT_ERROR_USER
+					wok_exit $EXIT_ERR_USR
 				fi
 				array_add cascade_list "$module";;
 
 			--report-log=*)
 				if ! $WOK_LOG_ENABLE; then
 					wok_perror "Report logging has been disabled as it presents a security risk."
-					wok_exit $EXIT_ERROR_USER
+					wok_exit $EXIT_ERR_USR
 				fi
 				if ! arg_value="$(arg_parseValue "$arg")"; then
 					wok_perror "Invalid usage."
-					wok_exit $EXIT_ERROR_USER
+					wok_exit $EXIT_ERR_USR
 				fi
 				if ! [[ $arg_value =~ $WOK_LOG_PATTERN ]]; then
 					wok_perror "The log file must be located in a temp directory."
-					wok_exit $EXIT_ERROR_USER
+					wok_exit $EXIT_ERR_USR
 				fi
 				if [[ ! -f $arg_value ]]; then
 					wok_perror "The log file must already be created."
-					wok_exit $EXIT_ERROR_USER
+					wok_exit $EXIT_ERR_USR
 				fi
 				report_log="$arg_value";;
 
 			--report-to=*)
 				if ! arg_value="$(arg_parseValue "$arg")"; then
 					wok_perror "Invalid usage."
-					wok_exit $EXIT_ERROR_USER
+					wok_exit $EXIT_ERR_USR
 				fi
 				array_add report_to "$arg_value";;
 
@@ -137,22 +137,22 @@ wok_add()
 
 	# Only one additional argument is required: the domain name
 	if [[ ${#args_remain[@]} -ne 1 ]]; then
-		wok_perror "Invalid usage. See '${wok_command} add --help'."
-		wok_exit $EXIT_ERROR_USER
+		wok_perror "Invalid usage. See '${WOK_COMMAND} add --help'."
+		wok_exit $EXIT_ERR_USR
 	fi
 
 	# Domain name processing
 	domain="${args_remain[0]}"
 	if wok_repo_has "$domain"; then
 		wok_perror "Domain '${domain}' already exists."
-		wok_exit $EXIT_ERROR_USER
+		wok_exit $EXIT_ERR_USR
 	fi
 	if ! [[ $domain =~ $WOK_DOMAIN_PATTERN ]]; then
 		wok_perror "Domain name '${domain}' is invalid. Please use the following pattern:"
 		wok_perror
 		wok_perror "    ${WOK_DOMAIN_PATTERN}"
 		wok_perror
-		wok_exit $EXIT_ERROR_USER
+		wok_exit $EXIT_ERR_USR
 	fi
 
 	# Determine modules
@@ -172,7 +172,7 @@ wok_add()
 	for module in "${cascade_list[@]}"; do
 		if ! array_has cascade_allowed "$module"; then
 			wok_perror "Module '${module}' is not allowed to cascade."
-			wok_exit $EXIT_ERROR_SYSTEM
+			wok_exit $EXIT_ERR_SYS
 		fi
 	done
 	wok_module_resolveDeps cascade_list
@@ -196,7 +196,7 @@ wok_add()
 	# Register the domain in the repo
 	cmd=(wok_repo_add "$domain")
 	if ! ui_showProgress "Adding managed domain '${domain}'" "${cmd[@]}"; then
-		wok_exit $EXIT_ERROR_SYSTEM
+		wok_exit $EXIT_ERR_SYS
 	fi
 
 	# Create the report
@@ -247,8 +247,8 @@ wok_remove()
 		case "$arg" in
 
 			-h|--help)
-				echo "Usage: ${wok_command} remove [--force|-f] <domain>"
-				return $EXIT_SUCCESS;;
+				echo "Usage: ${WOK_COMMAND} remove [--force|-f] <domain>"
+				return $EXIT_OK;;
 
 			-f|--force)
 				force=true;;
@@ -261,15 +261,15 @@ wok_remove()
 
 	# Only one additional argument is required: the domain name
 	if [[ ${#args_remain[@]} -ne 1 ]]; then
-		wok_perror "Invalid usage. See '${wok_command} remove --help'."
-		wok_exit $EXIT_ERROR_USER
+		wok_perror "Invalid usage. See '${WOK_COMMAND} remove --help'."
+		wok_exit $EXIT_ERR_USR
 	fi
 
 	# Domain name processing
 	domain="${args_remain[0]}"
 	if ! wok_repo_has "$domain"; then
 		wok_perror "Domain '${domain}' does not exist."
-		wok_exit $EXIT_ERROR_USER
+		wok_exit $EXIT_ERR_USR
 	fi
 
 	if ! $force; then
@@ -278,7 +278,7 @@ wok_remove()
 			"\bpossibility of recovery. Do you really want to continue?" \
 		)"; then
 			echo "Aborted."
-			return $EXIT_SUCCESS
+			return $EXIT_OK
 		fi
 	fi
 
