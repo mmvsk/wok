@@ -104,7 +104,7 @@ assert_true()
 	local descr="$1"
 	local cmd="$2"
 	shift 2
-	local args="$@"
+	local args=("$@")
 
 	test_descr "$descr"
 	if "$cmd" "${args[@]}"; then
@@ -119,7 +119,7 @@ assert_false()
 	local descr="$1"
 	local cmd="$2"
 	shift 2
-	local args="$@"
+	local args=("$@")
 
 	test_descr "$descr"
 	if "$cmd" "${args[@]}"; then
@@ -145,9 +145,9 @@ index_clean
 # test_index_has()
 {
 index_init # dry-run
-	test_descr "index non-existence"; test -f "$index_file" && test_fail || test_succeed
+	assert_false "index non-existence" test -f "$index_file"
 	assert_false "non-existing index" test_qe_has "something"
-	test_descr "index_has() side effects (file creation on check)"; test -f "$index_file" && test_fail || test_succeed
+	assert_false "index_has() side effects (file creation on check)" test -f "$index_file"
 
 	echo "google.com" >>"$index_file"
 	echo "example.org" >>"$index_file"
@@ -166,7 +166,7 @@ index_clean
 index_init # dry-run
 	assert_true "new token to a non-existing index" test_qe_add "bing.com"
 	assert_true "added token existence" test_qe_has "bing.com"
-	test_descr "index existence"; test -f "$index_file" && test_succeed || test_fail
+	assert_true "index existence" test -f "$index_file"
 
 	assert_true "new token to an existing index #1" test_qe_add "altavista.com"
 	assert_true "added token existence" test_qe_has "altavista.com"
