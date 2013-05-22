@@ -1,0 +1,25 @@
+#!/bin/bash
+
+base="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+test="$base"/test/smoke
+
+cd "$base"
+
+make clean && make \
+	wok_path="$test"/share \
+	sbin_path="$test"/wok \
+	conf_path="$test"/conf \
+	repo_path="$test"/repo
+
+./install.sh \
+	--reinstall \
+	--no-root \
+	--wok-path="$test"/share \
+	--sbin-path="$test"/wok \
+	--conf-path="$test"/conf \
+	--repo-path="$test"/repo
+
+echo "Don't forget the following (triple click, <C-c>, <C-v>):"
+echo
+echo "  export PATH=\$PATH:$test"
+echo

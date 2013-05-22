@@ -1,2 +1,5 @@
 /dist/
+/test/smoke/
 /.local/
+
+!/test/smoke/init
