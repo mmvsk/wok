@@ -22,8 +22,12 @@
 # Uses
 # ----------------------------
 # 
-# ini_set <file> <section> <key> <value>
-# ini_get <file> <section> <key>
+# json_set <jsonFile_path> <key> <value>
+# json_get <jsonFile_path> <key>
+#
+# index_has <index_path> <token>
+# index_add <index_path> <token>
+# index_remove <index_path> <token>
 #
 # Directory structure
 # ------------------------------------------

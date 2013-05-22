@@ -138,8 +138,8 @@ dist/wok dist/wok/util dist/conf dist/modules:
 	@echo "done."
 
 dist/repo:
-	@echo -n "Creating directory $@..."
-	@mkdir -p "$@"
+	@echo -n "Creating empty repository..."
+	@cp -r res/repo dist/repo
 	@echo "done."
 
 dist/wok/util/str_match: src/util/str_match.php
