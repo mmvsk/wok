@@ -290,6 +290,10 @@ wok_remove()
 
 wok_list()
 {
+	local domain
+	local module
+	local modules=()
+
 	echo "list"
 	#[TODO]
 	# List domains

@@ -139,7 +139,9 @@ dist/wok dist/wok/util dist/conf dist/modules:
 
 dist/repo:
 	@echo -n "Creating empty repository..."
-	@cp -r res/repo dist/repo
+	@mkdir -p "$@"
+	@mkdir "$@/modules"
+	@touch "$@/domain.index"
 	@for module in $(modules); do \
 		mkdir -p dist/repo/modules/$$module/index; \
 		mkdir -p dist/repo/modules/$$module/data; \
