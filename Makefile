@@ -140,6 +140,11 @@ dist/wok dist/wok/util dist/conf dist/modules:
 dist/repo:
 	@echo -n "Creating empty repository..."
 	@cp -r res/repo dist/repo
+	@for module in $(modules); do \
+		mkdir -p dist/repo/modules/$$module/index; \
+		mkdir -p dist/repo/modules/$$module/data; \
+		touch dist/repo/modules/$$module/domain.index; \
+	done
 	@echo "done."
 
 dist/wok/util/str_match: src/util/str_match.php

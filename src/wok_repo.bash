@@ -23,8 +23,8 @@ WOK_REPO_DOMAIN_INDEX="${WOK_REPO_PATH}/domain.index"
 #
 # Usage: wok_repo_has <domain>
 #
-# @param string $domain Domain name
-# @return bool Existence
+# @param  string $domain Domain name
+# @return bool           Existence
 #
 wok_repo_has()
 {
@@ -36,8 +36,8 @@ wok_repo_has()
 #
 # Usage: wok_repo_add <domain>
 #
-# @param string $domain Domain name
-# @return bool Success
+# @param  string $domain Domain name
+# @return bool           Success
 #
 wok_repo_add()
 {
@@ -49,8 +49,8 @@ wok_repo_add()
 #
 # Usage: wok_repo_remove <domain>
 #
-# @param string $domain Domain name
-# @return bool Success
+# @param  string $domain Domain name
+# @return bool           Success
 #
 wok_repo_remove()
 {
@@ -72,162 +72,179 @@ wok_repo_list()
 #
 # Usage: wok_repo_module_has <module> <domain>
 #
+# @param  string $module Module name
+# @param  string $domain Domain name
+# @return bool           Existence
+#
 wok_repo_module_has()
 {
-	# index_has <index_path> <token>
-	# index_add <index_path> <token>
-	# index_remove <index_path> <token>
-	#
-	# $repo/modules/<module>/<domain>.ini
-	# $repo/modules/<module>/index/<index>.index
-	#
-	# $WOK_REPO_PATH
+	local module="$1"
+	local domain="$2"
+
+	index_has "${WOK_REPO_PATH}/modules/${module}/domain.index" "$domain"
 }
 
 #
 # Usage: wok_repo_module_add <module> <domain>
 #
+# @param  string $module Module name
+# @param  string $domain Domain name
+# @return bool           Success
+#
 wok_repo_module_add()
 {
-	# index_has <index_path> <token>
-	# index_add <index_path> <token>
-	# index_remove <index_path> <token>
-	#
-	# $repo/modules/<module>/<domain>.ini
-	# $repo/modules/<module>/index/<index>.index
-	#
-	# $WOK_REPO_PATH
+	local module="$1"
+	local domain="$2"
+
+	index_add "${WOK_REPO_PATH}/modules/${module}/domain.index" "$domain"
 }
 
 #
 # Usage: wok_repo_module_remove <module> <domain>
 #
+# @param  string $module Module name
+# @param  string $domain Domain name
+# @return bool           Success
+#
 wok_repo_module_remove()
 {
-	# index_has <index_path> <token>
-	# index_add <index_path> <token>
-	# index_remove <index_path> <token>
-	#
-	# $repo/modules/<module>/<domain>.ini
-	# $repo/modules/<module>/index/<index>.index
-	#
-	# $WOK_REPO_PATH
+	local module="$1"
+	local domain="$2"
+
+	index_remove "${WOK_REPO_PATH}/modules/${module}/domain.index" "$domain"
 }
 
 #
-# Usage: wok_repo_module_list <module> <domain>
+# Usage: wok_repo_module_list <module>
+#
+# @param string $module Module name
+# @print                Domain list
 #
 wok_repo_module_list()
 {
-	# index_has <index_path> <token>
-	# index_add <index_path> <token>
-	# index_remove <index_path> <token>
-	#
-	# $repo/modules/<module>/<domain>.ini
-	# $repo/modules/<module>/index/<index>.index
-	#
-	# $WOK_REPO_PATH
+	local module="$1"
+
+	cat "${WOK_REPO_PATH}/modules/${module}/domain.index"
 }
 
 #
-# Usage: wok_repo_module_data_set <module> <domain> <key> <value>
+# Usage: wok_repo_module_data_set <module> <domain> <key> [<value>]
+#
+# @param string      $module Module name
+# @param string      $domain Domain name
+# @param string      $key    Data key
+# @param string|null $value  If defined, the value to set. If missing,
+#                            it will unset the key
+# @return bool               Success
 #
 wok_repo_module_data_set()
 {
-	# json_set <jsonFile_path> <key> <value>
-	# json_get <jsonFile_path> <key>
-	#
-	# $repo/modules/<module>/<domain>.ini
-	# $repo/modules/<module>/index/<index>.index
-	#
-	# $WOK_REPO_PATH
+	local module="$1"
+	local domain="$2"
+	local key="$3"
+	local value="$4"
+
+	if [[ $# -ge 4 ]]; then
+		# Action: set key value
+		json_set "${WOK_REPO_PATH}/modules/${module}/data/${domain}.json" "$key" "$value"
+	else
+		# Action: unset key
+		json_set "${WOK_REPO_PATH}/modules/${module}/data/${domain}.json" "$key"
+	fi
 }
 
 #
 # Usage: wok_repo_module_get <module> <domain> <key>
 #
+# @param  string $module Module name
+# @param  string $domain Domain name
+# @param  string $key    Data key
+# @print  string         The value
+# @return bool           Success
+#
 wok_repo_module_data_get()
 {
-	# json_set <jsonFile_path> <key> <value>
-	# json_get <jsonFile_path> <key>
-	#
-	# $repo/modules/<module>/<domain>.ini
-	# $repo/modules/<module>/index/<index>.index
-	#
-	# $WOK_REPO_PATH
+	local module="$1"
+	local domain="$2"
+	local key="$3"
+
+	json_get "${WOK_REPO_PATH}/modules/${module}/data/${domain}.json" "$key"
 }
 
 #
 # Usage: wok_repo_module_index_has <module> <index> <token>
 #
+# @param  string $module Module name
+# @param  string $index  Index name (e.g. slug, uid, ...)
+# @return bool           Existence
+#
 wok_repo_module_index_has()
 {
-	# index_has <index_path> <token>
-	# index_add <index_path> <token>
-	# index_remove <index_path> <token>
-	#
-	# $repo/modules/<module>/<domain>.ini
-	# $repo/modules/<module>/index/<index>.index
-	#
-	# $WOK_REPO_PATH
+	local module="$1"
+	local index="$2"
+	local token="$2"
+
+	index_has "${WOK_REPO_PATH}/modules/${module}/index/${index}.index" "$token"
 }
 
 #
 # Usage: wok_repo_module_index_add <module> <index> <token>
 #
+# @param  string $module Module name
+# @param  string $index  Index name (e.g. slug, uid, ...)
+# @return bool           Success
+#
 wok_repo_module_index_add()
 {
-	# index_has <index_path> <token>
-	# index_add <index_path> <token>
-	# index_remove <index_path> <token>
-	#
-	# $repo/modules/<module>/<domain>.ini
-	# $repo/modules/<module>/index/<index>.index
-	#
-	# $WOK_REPO_PATH
+	local module="$1"
+	local index="$2"
+	local token="$2"
+
+	index_add "${WOK_REPO_PATH}/modules/${module}/index/${index}.index" "$token"
 }
 
 #
 # Usage: wok_repo_module_index_remove <module> <index> <token>
 #
+# @param  string $module Module name
+# @param  string $index  Index name (e.g. slug, uid, ...)
+# @return bool           Success
+#
 wok_repo_module_index_remove()
 {
-	# index_has <index_path> <token>
-	# index_add <index_path> <token>
-	# index_remove <index_path> <token>
-	#
-	# $repo/modules/<module>/<domain>.ini
-	# $repo/modules/<module>/index/<index>.index
-	#
-	# $WOK_REPO_PATH
+	local module="$1"
+	local index="$2"
+	local token="$2"
+
+	index_remove "${WOK_REPO_PATH}/modules/${module}/index/${index}.index" "$token"
 }
 
 #
 # Usage: wok_repo_module_index_list <module> <index>
 #
+# @param string $module Module name
+# @param string $index  Index name (e.g. slug, uid, ...)
+# @print                Token list
+#
 wok_repo_module_index_list()
 {
-	# index_has <index_path> <token>
-	# index_add <index_path> <token>
-	# index_remove <index_path> <token>
-	#
-	# $repo/modules/<module>/<domain>.ini
-	# $repo/modules/<module>/index/<index>.index
-	#
-	# $WOK_REPO_PATH
+	local module="$1"
+	local index="$2"
+
+	cat "${WOK_REPO_PATH}/modules/${module}/index/${index}.index"
 }
 
 #
 # Usage: wok_repo_module_index_getPath <module> <index>
 #
+# @param  string $module Module name
+# @param  string $index  Index name (e.g. slug, uid, ...)
+# @print                 Index file path
+#
 wok_repo_module_index_getPath()
 {
-	# index_has <index_path> <token>
-	# index_add <index_path> <token>
-	# index_remove <index_path> <token>
-	#
-	# $repo/modules/<module>/<domain>.ini
-	# $repo/modules/<module>/index/<index>.index
-	#
-	# $WOK_REPO_PATH
+	local module="$1"
+	local index="$2"
+
+	echo "${WOK_REPO_PATH}/modules/${module}/index/${index}.index"
 }
