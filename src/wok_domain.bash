@@ -296,8 +296,6 @@ wok_remove()
 	wok_module_resolveDeps modules
 	array_reverse modules
 
-	echo "${modules[@]}";exit 0 #FIXME TODO
-
 	# Determine module arguments
 	param=()
 	$force && array_add param "--force"
