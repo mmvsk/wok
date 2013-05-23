@@ -312,14 +312,62 @@ wok_remove()
 
 wok_list()
 {
+	# Argument vars
+	local list_modules=false
+
+	# Temp vars
+	local arg
 	local domain
 	local module
-	local modules=()
+	local has_module
 
-	wok_repo_list
+	# Process arguments
+	for arg in "$@"; do
+		case "$arg" in
 
-	#[TODO]
-	# List domains
-	# Loop on those domains
-	# For each domain, get involved modules and print them
+			-h|--help)
+				echo "Usage: ${WOK_COMMAND} list [--with-modules|-m]"
+				return $EXIT_OK;;
+
+			-m|--with-modules)
+				list_modules=true;;
+
+			*)
+				args_remain=("${args_remain[@]}" "$arg");;
+
+		esac
+	done
+
+	# No additional arguments are allowed
+	if [[ ${#args_remain[@]} -ne 0 ]]; then
+		wok_perror "Invalid usage. See '${WOK_COMMAND} list --help'."
+		wok_exit $EXIT_ERR_USR
+	fi
+
+	# Print managed domains
+	if ! $list_modules; then
+		# ...without modules
+		wok_repo_list
+	else
+		# ...with modules
+		for domain in $(wok_repo_list); do
+			has_module=false
+			echo -n "${domain} "
+			for module in "${WOK_MODULE_LIST[@]}"; do
+				if wok_repo_module_has "$module" "$domain"; then
+					if ! $has_module; then
+						has_module=true
+						echo -n "("
+					else
+						echo -n ", "
+					fi
+					echo -n "${module}"
+				fi
+			done
+			if $has_module; then
+				echo -n ")"
+			fi
+			echo
+		done
+	fi
 }
