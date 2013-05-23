@@ -65,7 +65,7 @@ purge()
 		echo "Wok is not configured on this system" >&2
 		return 1
 	fi
-	echo -n "Purging"
+	echo -n "Purging..."
 	rm -rf "$conf_path"
 	rm -rf "$repo_path"
 	echo "done."
