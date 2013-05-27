@@ -112,5 +112,5 @@ wok_report_send()
 	[[ -n "$subject" ]]    && mailx_param=("${mailx_param[@]}" -s "$subject")
 	[[ -n "$email_from" ]] && mailx_param=("${mailx_param[@]}" -r "$email_from")
 
-	mailx "${mailx_param[@]}" "$email_to" <"$report"
+	echo mailx "${mailx_param[@]}" "$email_to" <"$report"
 }

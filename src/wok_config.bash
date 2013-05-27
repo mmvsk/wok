@@ -23,7 +23,8 @@ wok_config_get()
 	local section="$1"
 	local key="$2"
 
-	if ! ini_get "$WOK_CONFIG_FILE" $section" $key" 2>/dev/null; then
+	if ! ini_get "$WOK_CONFIG_FILE" "$section" "$key" 2>/dev/null; then
+		#FIXME: This command may NOT make the whole stuff exit!? Or sys err always exit?
 		wok_exit $EXIT_ERR_SYS
 	fi
 }

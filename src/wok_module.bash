@@ -112,16 +112,12 @@ wok_module_handle()
 
 wok_module_getAllowedToCascade()
 {
-	#FIXME
-	#wok_config_get wok modules_cascade_allowed
-	echo foo bar
+	wok_config_get wok modules_cascade_allowed
 }
 
 wok_module_getCascadeDefaults()
 {
-	#FIXME
-	#wok_config_get wok modules_cascade_defaults
-	echo foo bar
+	wok_config_get wok modules_cascade_defaults
 }
 
 wok_module_resolveDeps()

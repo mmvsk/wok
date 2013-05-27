@@ -177,7 +177,7 @@ dist/wok/util/json_set: src/util/json_set.php
 dist/conf/wok.ini: src/wok.ini $(modules_ini)
 	@echo -n "Assembling $@..."
 	@cp src/wok.ini "$@"
-	@$(foreach path,$(modules_ini),cat $(path) >>"$@";)
+	@$(foreach path,$(modules_ini),(echo; cat $(path)) >>"$@";)
 	@echo "done."
 
 dist/wok/wok: src/*.bash $(common_src) $(modules_src)

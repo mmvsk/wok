@@ -159,13 +159,21 @@ ui_getString()
 #
 ui_showProgress()
 {
-	echo -n "${1}..."
+	local message="$1"
 	shift
-	if "$@" >/dev/null 2>/dev/null; then
+	local cmd=("$@")
+	local err="$(mktemp)"
+
+	echo -n "${message}..."
+	shift
+	if ("${cmd[@]}") >/dev/null 2>"$err"; then
 		echo "done."
+		rm "$err"
 		return 0
 	else
 		echo -e "\033[0;31mfailed!\033[0m"
+		cat "$err"
+		rm "$err"
 		return 1
 	fi
 }

@@ -1,0 +1,117 @@
+#!/bin/bash
+
+#
+# Copyright © 2013 Max Ruman
+#
+# This file is part of Wok.
+#
+# Wok is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# Wok is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with Wok. If not, see <http://www.gnu.org/licenses/>.
+#
+
+E_INVALID_USAGE=1
+E_TEST_FAILED=2
+E_SYSTEM_ERROR=3
+E_TEST_ERROR=4
+
+if [[ -n $1 ]]; then
+	inc="$1"
+else
+	inc="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)/src/common/array.bash"
+fi
+
+if [[ ! -f $inc ]]; then
+	echo "Source file ${inc} does not exist" >&2
+	exit $E_INVALID_USAGE
+fi
+
+. "$inc"
+
+bin="array_shift"
+
+test_descr()
+{
+	local descr="$1"
+
+	echo -n "Testing ${descr}..."
+}
+
+test_succeed()
+{
+	echo "OK"
+}
+
+test_fail()
+{
+	echo -e "\033[0;31mfailed!\033[0m"
+	exit $E_TEST_FAILED
+}
+
+assert_true()
+{
+	local descr="$1"
+	local cmd="$2"
+	shift 2
+	local args=("$@")
+
+	test_descr "$descr"
+	if "$cmd" "${args[@]}"; then
+		test_succeed
+	else
+		test_fail
+	fi
+}
+
+assert_false()
+{
+	local descr="$1"
+	local cmd="$2"
+	shift 2
+	local args=("$@")
+
+	test_descr "$descr"
+	if "$cmd" "${args[@]}"; then
+		test_fail
+	else
+		test_succeed
+	fi
+}
+
+test_printeq()
+{
+	local descr="$1"
+	local expect="$2"
+	local arr="$3"
+	local val=""
+
+	test_descr "$descr"
+	if "$bin" "$arr" val && [[ $val == $expect ]]; then
+		test_succeed
+	else
+		test_fail
+	fi
+}
+
+array=("hello world" "john is here" 51 "nice")
+
+assert_true  "simple element shifting #1" "$bin" array
+assert_true  "(previous) array elements count"  test ${#array[@]} -eq 3
+assert_true  "(previous) array elements values" test "${array[*]}" = "john is here 51 nice"
+
+test_printeq "shifted element value" "john is here" array
+assert_true  "(previous) array elements count"  test ${#array[@]} -eq 2
+assert_true  "(previous) array elements values" test "${array[*]}" = "51 nice"
+
+assert_true  "simple element shifting #2" "$bin" array
+assert_true  "simple element shifting #3" "$bin" array
+assert_false "empty array shifting"       "$bin" array

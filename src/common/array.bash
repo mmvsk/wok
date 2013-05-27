@@ -50,7 +50,7 @@ array_has()
 #
 # Add a value to an array
 #
-# Usage: array_add <array_var_name> <value>
+# Usage: array_add <array:ref> <value>
 #
 #   arr=("hello world" "bonjour le monde")
 #   array_add arr "buenos dias"
@@ -80,7 +80,7 @@ array_add()
 #
 # Reverse the order of an array
 #
-# Usage: array_reverse <array_var_name>
+# Usage: array_reverse <array:ref>
 #
 #   arr=("hello world" "bonjour le monde")
 #   array_reverse arr
@@ -101,4 +101,29 @@ array_reverse()
 	done
 
 	eval "${__array_ref}=(${__eval_values})"
+}
+
+#
+# Shift an element off an array
+#
+# Usage: array_shift <array:ref> [<element_val:ref>]
+#
+# Variables you use must not start with '__'.
+#
+array_shift()
+{
+	local __array_ref="$1"
+	local __value_ref="$2"
+	local __array_values=()
+	eval "__array_values=(\"\${${1}[@]}\")"
+
+	if [[ "${#__array_values[@]}" -lt 1 ]]; then
+		return 1
+	fi
+
+	if [[ $# -gt 1 ]]; then
+		printf -v "$__value_ref" %s "${__array_values[0]}"
+	fi
+
+	eval "$__array_ref"'=("${'"$__array_ref"'[@]:1}")'
 }

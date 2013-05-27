@@ -1,6 +1,11 @@
 Wok
 ===
 
+Dependencies
+------------
+
+bsd-mailx
+
 Installation
 ------------
 

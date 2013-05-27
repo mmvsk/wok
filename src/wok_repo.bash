@@ -154,7 +154,7 @@ wok_repo_module_data_set()
 }
 
 #
-# Usage: wok_repo_module_get <module> <domain> <key>
+# Usage: wok_repo_module_data_get <module> <domain> <key>
 #
 # @param  string $module Module name
 # @param  string $domain Domain name
@@ -182,7 +182,7 @@ wok_repo_module_index_has()
 {
 	local module="$1"
 	local index="$2"
-	local token="$2"
+	local token="$3"
 
 	index_has "${WOK_REPO_PATH}/modules/${module}/index/${index}.index" "$token"
 }
@@ -198,7 +198,7 @@ wok_repo_module_index_add()
 {
 	local module="$1"
 	local index="$2"
-	local token="$2"
+	local token="$3"
 
 	index_add "${WOK_REPO_PATH}/modules/${module}/index/${index}.index" "$token"
 }
@@ -214,7 +214,7 @@ wok_repo_module_index_remove()
 {
 	local module="$1"
 	local index="$2"
-	local token="$2"
+	local token="$3"
 
 	index_remove "${WOK_REPO_PATH}/modules/${module}/index/${index}.index" "$token"
 }
@@ -245,6 +245,11 @@ wok_repo_module_index_getPath()
 {
 	local module="$1"
 	local index="$2"
+	local path
 
-	echo "${WOK_REPO_PATH}/modules/${module}/index/${index}.index"
+	path="${WOK_REPO_PATH}/modules/${module}/index/${index}.index"
+	if [[ ! -f $path ]]; then
+		touch "$path"
+	fi
+	echo "$path"
 }

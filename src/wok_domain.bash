@@ -163,8 +163,7 @@ wok_add()
 	fi
 	if [[ ${#cascade_list[@]} -lt 1 ]] && $interactive; then
 		for module in $(wok_module_getAllowedToCascade); do
-			module_name="$(wok_module_pname "$module")"
-			if ui_confirm "Use '${module_name}'?"; then
+			if ui_confirm "Bind '${module}' module?"; then
 				array_add cascade_list "$module"
 			fi
 		done
@@ -202,7 +201,7 @@ wok_add()
 
 	# Create the report
 	wok_report_create report
-	wok_report_insl report "Wok recipe: %s" "$domain"
+	wok_report_insl report "domain: %s" "$domain"
 	wok_report_insl report ""
 
 	# Determine module arguments
@@ -224,9 +223,10 @@ wok_add()
 		param=()
 		email_from="$(wok_config_get wok report_email_from)"
 		[[ -n $email_from ]] && param=("${param[@]}" "$email_from")
-		for email in "${report_to[@]}"; do
-			wok_report_send report "$email" "Wok recipe: ${domain}" "${param[@]}"
-		done
+																																		cat $report
+		#for email in "${report_to[@]}"; do
+			#wok_report_send report "$email" "Wok recipe: ${domain}" "${param[@]}"
+		#done
 	fi
 
 	# Clean the report
