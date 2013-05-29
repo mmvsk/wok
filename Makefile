@@ -85,7 +85,7 @@ uninstall:
 		--conf-path="$(conf_path)" \
 		--repo-path="$(repo_path)"
 
-reinstall:
+reinstall: wok
 	@./install.sh \
 		--reinstall \
 		--wok-path="$(wok_path)" \
