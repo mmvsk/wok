@@ -35,7 +35,7 @@ WOK_NAME="Wok"
 WOK_VERSION="0.3.0"
 WOK_COMMAND="$(basename ${0})"
 
-# Exit statuses
+# Exit statuses (note: a system error should be fatal)
 EXIT_OK=0
 EXIT_ERR_SYS=-1
 EXIT_ERR_USR=1

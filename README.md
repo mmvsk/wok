@@ -9,6 +9,16 @@ bsd-mailx
 Installation
 ------------
 
+Modules
+-------
+
+Requires methods:
+
+- wok_\{module\}_describe
+- wok_\{module\}_pdeps
+- wok_\{module\}_has
+- wok_\{module\}_handle
+
 Change log
 ----------
 

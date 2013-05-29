@@ -18,10 +18,7 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
-wok_www_pname()
-{
-	echo "www domain"
-}
+WOK_WWW_USERDEL_CMD="userdel -f"
 
 wok_www_describe()
 {
@@ -72,7 +69,7 @@ wok_www_add()
 		wok_exit $EXIT_ERR_USR
 	fi
 
-	if wok_repo_module_has www "$domain"; then
+	if wok_www_has "$domain"; then
 		wok_perror "Domain '${domain}' is already bound to 'www' module."
 		wok_exit $EXIT_ERR_USR
 	fi
@@ -85,14 +82,14 @@ wok_www_add()
 	fi
 
 	# Verify base paths
-	#if [[ ! -d "$home_path_base" || ! -w "$home_path_base" ]]; then
-		#wok_perror "Home base directory '${home_path_base}' does not exist or is not writable."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
-	#if [[ ! -d "$www_path_base" || ! -w "$www_path_base" ]]; then
-		#wok_perror "WWW base directory '${www_path_base}' does not exist or is not writable."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
+	if [[ ! -d "$home_path_base" || ! -w "$home_path_base" ]]; then
+		wok_perror "Home base directory '${home_path_base}' does not exist or is not writable."
+		wok_exit $EXIT_ERR_SYS
+	fi
+	if [[ ! -d "$www_path_base" || ! -w "$www_path_base" ]]; then
+		wok_perror "WWW base directory '${www_path_base}' does not exist or is not writable."
+		wok_exit $EXIT_ERR_SYS
+	fi
 
 	# Generate paths
 	home_path="${home_path}/${uid}"
@@ -109,40 +106,32 @@ wok_www_add()
 	fi
 
 	# Create system user
-	#if ! useradd -g "$user_gid" -d "$home_path" -s "$user_shell" "$uid"; then
-		#wok_perror "Could not create system user '${uid}'."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
-		echo useradd -g "$user_gid" -d "$home_path" -s "$user_shell" "$uid"
+	if ! useradd -g "$user_gid" -d "$home_path" -s "$user_shell" "$uid"; then
+		wok_perror "Could not create system user '${uid}'."
+		wok_exit $EXIT_ERR_SYS
+	fi
 
 	# Create www direcotry
-	#umask_prev="$(umask)"
-	#umask "$(wok_config_get wok_www www_umask)"
-	#if ! cp -r "$(wok_config_get wok_www www_template_path)" "$www_path"; then
-		#wok_perror "Could not create www directory '${www_path}'."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
-	#chown -R "${uid}:${user_gid}" "$www_path"
-	#umask "$umask_prev"
-		echo umask "$(wok_config_get wok_www www_umask)"
-		echo cp -r "$(wok_config_get wok_www www_template_path)" "$www_path"
-		echo chown -R "${uid}:${user_gid}" "$www_path"
+	umask_prev="$(umask)"
+	umask "$(wok_config_get wok_www www_umask)"
+	if ! cp -r "$(wok_config_get wok_www www_template_path)" "$www_path"; then
+		wok_perror "Could not create www directory '${www_path}'."
+		wok_exit $EXIT_ERR_SYS
+	fi
+	chown -R "${uid}:${user_gid}" "$www_path"
+	umask "$umask_prev"
 
 	# Create home directory
-	#umask_prev="$(umask)"
-	#umask "$(wok_config_get wok_www home_umask)"
-	#if ! cp -r "$(wok_config_get wok_www home_template_path)" "$home_path"; then
-		#wok_perror "Could not create home directory '${home_path}'."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
-	#ln -s "$www_path" "${home_path}/www"
-	#chmod -R 700 "${home_path}/.ssh"
-	#chown -R "${uid}:${user_gid}" "$home_path"
-	#umask "$umask_prev"
-		echo cp -r "$(wok_config_get wok_www home_template_path)" "$home_path"
-		echo ln -s "$www_path" "${home_path}/www"
-		echo chmod -R 700 "${home_path}/.ssh"
-		echo chown -R "${uid}:${user_gid}" "$home_path"
+	umask_prev="$(umask)"
+	umask "$(wok_config_get wok_www home_umask)"
+	if ! cp -r "$(wok_config_get wok_www home_template_path)" "$home_path"; then
+		wok_perror "Could not create home directory '${home_path}'."
+		wok_exit $EXIT_ERR_SYS
+	fi
+	ln -s "$www_path" "${home_path}/www"
+	chmod -R 700 "${home_path}/.ssh"
+	chown -R "${uid}:${user_gid}" "$home_path"
+	umask "$umask_prev"
 
 	# Register...
 	wok_repo_module_add "www" "$domain"
@@ -150,19 +139,75 @@ wok_www_add()
 	wok_repo_module_data_set "www" "$domain" "uid" "$uid"
 }
 
+wok_www_has()
+{
+	local domain="$1"
+
+	wok_repo_module_has www "$domain"
+}
+
 wok_www_list()
 {
-	echo
+	wok_repo_module_list www | sort
 }
 
 wok_www_remove()
 {
-	echo
+	local domain="$1"
+
+	local uid
+	local home_path
+	local www_path
+
+	if ! wok_www_has "$domain"; then
+		wok_perror "Domain '${domain}' is not bound to 'www' module."
+		wok_exit $EXIT_ERR_USR
+	fi
+
+	uid="$(wok_www_puid "$domain")"
+	home_path="$(wok_config_get wok_www home_path_base)/${domain}"
+	www_path="$(wok_config_get wok_www www_path_base)/${uid}"
+
+	if ! egrep -q "^${uid}:" /etc/passwd; then
+		wok_perror "System user '${uid}' does not exist on this host."
+		wok_exit $EXIT_ERR_SYS
+	fi
+
+	if [[ ! -d $home_path ]]; then
+		wok_perror "Home directory '${home_path}' does not exist."
+		wok_exit $EXIT_ERR_SYS
+	fi
+	if [[ ! -d $www_path ]]; then
+		wok_perror "WWW directory '${www_path}' does not exist."
+		wok_exit $EXIT_ERR_SYS
+	fi
+
+	if ! $WOK_WWW_USERDEL_CMD "$uid"; then
+		wok_perror "Error deleting system user '${uid}'"
+		wok_exit $EXIT_ERR_SYS
+	fi
+
+	if [[ -d $home_path ]]; then
+		rm -rf "$home_path"
+	fi
+	rm -rf "$www_path"
+
+	# Unregister...
+	wok_repo_module_remove "www" "$domain"
+	wok_repo_module_index_remove "www" "uid" "$uid"
+	wok_repo_module_data_remove "www" "$domain"
 }
 
 wok_www_puid()
 {
-	echo "Get the uid (there is no CLI interface to this function)"
+	local domain="$1"
+
+	if ! wok_www_has "$domain"; then
+		wok_perror "Domain ${domain} is not managed by 'www' module."
+		wok_exit $WOK_ERR_SYS
+	fi
+
+	wok_repo_module_data_get "www" "$domain" "uid"
 }
 
 wok_www_handle()
@@ -247,66 +292,34 @@ wok_www_handle()
 			fi
 
 			if [[ -n $report_log ]]; then
-				echo "www:" >>"$report_log"
-				echo "    uid: $(wok_repo_module_data_get "www" "$domain" "uid")" >>"$report_log"
-				echo >>"$report_log"
+				wok_report_insl report_log "www:"
+				wok_report_insl report_log "    uid: %s" "$(wok_repo_module_data_get "www" "$domain" "uid")"
+				wok_report_insl report_log ""
 			fi;;
 
 		list|ls)
+			wok_www_list
 			return $?;;
 
 		remove|rm)
+			if [[ ${#args_remain[@]} -ne 1 ]]; then
+				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_exit $EXIT_ERR_USR
+			fi
+			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
+
+			if ! $force && ! ui_confirm "You are about to delete all files related to ${domain}. Continue?"; then
+				echo "Aborted."
+				return 0
+			fi
+
+			cmd=(wok_www_remove "$domain")
+			ui_showProgress "Unbinding domain '${domain}' from 'www' module" "${cmd[@]}"
 			return $?;;
 
 		*)
 			wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
 			wok_exit $EXIT_ERR_USR;;
 
-	esac
-
-	# Domain name processing
-	domain="${args_remain[0]}"
-}
-
-_____()
-{
-	case $action in
-		ls)
-			silent cd $repo
-			find . -maxdepth 1 -type f -name "$pattern" \
-				| sed -r 's/^.{2}//' \
-				| sort
-			silent cd -
-			;;
-		add)
-			;;
-		rm)
-			test ! -e $index_domain/$domain \
-				&& echo "This domain does not exist" \
-				&& exit 1
-			if test ! $force; then
-				confirm "Remove www data?" || exit 0
-			fi
-			source $repo/$domain
-			echo -n "Removing system user: $_uid... "
-				silent userdel -f $_uid &>> /dev/null
-				echo "done"
-			echo -n "Removing log directory: $wok_www_log_path/$domain... "
-				rm -rf $wok_www_log_path/$domain
-				echo "done"
-			echo -n "Removing directory: $wok_www_path/$domain... "
-				rm -rf $wok_www_path/$domain
-				echo "done"
-			rm $index_domain/$_domain
-			rm $index_uid/$_uid
-			rm $repo/$domain
-			;;
-		uid)
-			test ! -e $index_domain/$domain \
-				&& echo "This domain does not exist" \
-				&& exit 1
-			source $repo/$domain
-			echo $_uid
-			;;
 	esac
 }

@@ -172,6 +172,29 @@ wok_repo_module_data_get()
 }
 
 #
+# Completely removes the JSON file.
+#
+# Usage: wok_repo_module_data_get <module> <domain>
+#
+# @param  string $module Module name
+# @param  string $domain Domain name
+# @return bool           Success
+#
+wok_repo_module_data_remove()
+{
+	local module="$1"
+	local domain="$2"
+
+	local file="${WOK_REPO_PATH}/modules/${module}/data/${domain}.json"
+
+	if [[ ! -f $file ]]; then
+		return 1
+	fi
+
+	rm "$file"
+}
+
+#
 # Usage: wok_repo_module_index_has <module> <index> <token>
 #
 # @param  string $module Module name

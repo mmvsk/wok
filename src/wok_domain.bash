@@ -49,7 +49,7 @@ wok_add()
 	local email
 	local email_from
 	local re
-	# [FIXME] Dirty list to array conversion... Best way: directly use array
+	# Note: Dirty list to array conversion... Best way: directly use array
 	# format in .ini (modules_cascadable[] = ...), and retrieve as an
 	# array using an iterator (or new lines). But for this version it's
 	# OK. Just be sure that the configuration is valid...
@@ -223,10 +223,9 @@ wok_add()
 		param=()
 		email_from="$(wok_config_get wok report_email_from)"
 		[[ -n $email_from ]] && param=("${param[@]}" "$email_from")
-																																		cat $report
-		#for email in "${report_to[@]}"; do
-			#wok_report_send report "$email" "Wok recipe: ${domain}" "${param[@]}"
-		#done
+		for email in "${report_to[@]}"; do
+			wok_report_send report "$email" "Wok recipe: ${domain}" "${param[@]}"
+		done
 	fi
 
 	# Clean the report
@@ -347,14 +346,14 @@ wok_list()
 	# Print managed domains
 	if ! $list_modules; then
 		# ...without modules
-		wok_repo_list
+		wok_repo_list | sort
 	else
 		# ...with modules
 		for domain in $(wok_repo_list); do
 			has_module=false
 			echo -n "${domain} "
 			for module in "${WOK_MODULE_LIST[@]}"; do
-				if wok_repo_module_has "$module" "$domain"; then
+				if "wok_${module}_has" "$domain"; then
 					if ! $has_module; then
 						has_module=true
 						echo -n "("
@@ -368,6 +367,6 @@ wok_list()
 				echo -n ")"
 			fi
 			echo
-		done
+		done | sort
 	fi
 }

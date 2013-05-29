@@ -20,6 +20,4 @@ make clean && make \
 	--repo-path="$test"/repo
 
 echo "Don't forget the following (triple click, <C-c>, <C-v>):"
-echo
-echo "  export PATH=\$PATH:$test"
-echo
+echo -e "\033[0;33mexport PATH=\$PATH:$test\033[0m"
