@@ -285,6 +285,7 @@ wok_remove()
 			return $EXIT_OK
 		fi
 	fi
+	force=true
 
 	# Resolve involved modules
 	for module in "${WOK_MODULE_LIST[@]}"; do
