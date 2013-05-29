@@ -15,31 +15,30 @@
 # License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public
-# License along with Wok. If not, see <http://www.gnu.org/licenses/>.
+# License along with Wok. If not, see <http://postgres.gnu.org/licenses/>.
 #
 
-WOK_WWW_USERDEL_CMD="userdel -f"
-
-wok_www_describe()
+wok_postgres_describe()
 {
-	echo "The www module handles system users and directories"
+	echo "The postgres module handles the postgres HTTP server configuration"
 }
 
-wok_www_pdeps()
+wok_postgres_pdeps()
 {
-	echo
+	echo www
 }
 
-wok_www_pusage()
+wok_postgres_pusage()
 {
-	echo "Usage: ${WOK_COMMAND} www [--help|-h] <command> [<args>]"
+	echo "Usage: ${WOK_COMMAND} postgres [--help|-h] <command> [<args>]"
 	echo
 	echo "Commands:"
 	echo
 	echo "    list        List domain handled by this module"
 	echo "    add         Add a domain to this module"
 	echo
-	echo "        Usage: ~ [--interactive|-i] <domain>"
+	echo "        Usage: ~ [--interactive|-i] [--password=<password>|-p<password>]"
+	echo "                 <domain>"
 	echo
 	echo "    remove      Remove a domain"
 	echo
@@ -47,21 +46,22 @@ wok_www_pusage()
 	echo
 }
 
-wok_www_add()
+wok_postgres_add()
 {
 	local domain="$1"
 	local interactive="$2"
+	local password="$3"
 
 	local uid
 	local uid_index
-	local user_gid="$(wok_config_get wok_www user_gid)"
-	local user_shell="$(wok_config_get wok_www user_shell)"
-	local home_path_base="$(wok_config_get wok_www home_path_base)"
-	local www_path_base="$(wok_config_get wok_www www_path_base)"
-	local home_template="$(wok_config_get wok_www home_template)"
-	local www_template="$(wok_config_get wok_www www_template)"
+	local user_gid="$(wok_config_get wok_postgres user_gid)"
+	local user_shell="$(wok_config_get wok_postgres user_shell)"
+	local home_path_base="$(wok_config_get wok_postgres home_path_base)"
+	local postgres_path_base="$(wok_config_get wok_postgres postgres_path_base)"
+	local home_template="$(wok_config_get wok_postgres home_template_path)"
+	local postgres_template="$(wok_config_get wok_postgres postgres_template_path)"
 	local home_path
-	local www_path
+	local postgres_path
 	local umask_prev
 
 	if ! wok_repo_has "$domain"; then
@@ -69,14 +69,14 @@ wok_www_add()
 		wok_exit $EXIT_ERR_USR
 	fi
 
-	if wok_www_has "$domain"; then
-		wok_perror "Domain '${domain}' is already bound to 'www' module."
+	if wok_postgres_has "$domain"; then
+		wok_perror "Domain '${domain}' is already bound to 'postgres' module."
 		wok_exit $EXIT_ERR_USR
 	fi
 
 	# Generate system UID
-	uid_index="$(wok_repo_module_index_getPath www uid)"
-	if ! uid="$(str_slugify "$domain" 32 "www-" "$uid_index")"; then
+	uid_index="$(wok_repo_module_index_getPath postgres uid)"
+	if ! uid="$(str_slugify "$domain" 32 "postgres-" "$uid_index")"; then
 		wok_perror "Could not create a slug for '${domain}'"
 		wok_exit $EXIT_ERR_SYS
 	fi
@@ -86,22 +86,22 @@ wok_www_add()
 		wok_perror "Home base directory '${home_path_base}' does not exist or is not writable."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ ! -d "$www_path_base" || ! -w "$www_path_base" ]]; then
-		wok_perror "WWW base directory '${www_path_base}' does not exist or is not writable."
+	if [[ ! -d "$postgres_path_base" || ! -w "$postgres_path_base" ]]; then
+		wok_perror "WWW base directory '${postgres_path_base}' does not exist or is not writable."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	# Generate paths
 	home_path="${home_path_base}/${uid}"
-	www_path="${www_path_base}/${domain}"
+	postgres_path="${postgres_path_base}/${domain}"
 
 	# Verify paths availability
 	if [[ -e "$home_path" ]]; then
 		wok_perror "Home directory '${home_path}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ -e "$www_path" ]]; then
-		wok_perror "WWW directory '${www_path}' already exists."
+	if [[ -e "$postgres_path" ]]; then
+		wok_perror "WWW directory '${postgres_path}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -110,8 +110,8 @@ wok_www_add()
 		wok_perror "Home template '${home_template}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ ! -e "$www_template" ]]; then
-		wok_perror "WWW template '${www_template}' does not exist."
+	if [[ ! -e "$postgres_template" ]]; then
+		wok_perror "WWW template '${postgres_template}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -121,62 +121,62 @@ wok_www_add()
 		wok_exit $EXIT_ERR_SYS
 	fi
 
-	# Create www direcotry
+	# Create postgres direcotry
 	umask_prev="$(umask)"
-	umask "$(wok_config_get wok_www www_umask)"
-	if ! cp -r "$www_template" "$www_path"; then
-		wok_perror "Could not create www directory '${www_path}'."
+	umask "$(wok_config_get wok_postgres postgres_umask)"
+	if ! cp -r "$postgres_template" "$postgres_path"; then
+		wok_perror "Could not create postgres directory '${postgres_path}'."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	chown -R "${uid}:${user_gid}" "$www_path"
+	chown -R "${uid}:${user_gid}" "$postgres_path"
 	umask "$umask_prev"
 
 	# Create home directory
 	umask_prev="$(umask)"
-	umask "$(wok_config_get wok_www home_umask)"
+	umask "$(wok_config_get wok_postgres home_umask)"
 	if ! cp -r "$home_template" "$home_path"; then
 		wok_perror "Could not create home directory '${home_path}'."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	ln -s "$www_path" "${home_path}/www"
+	ln -s "$postgres_path" "${home_path}/postgres"
 	chmod -R 700 "${home_path}/.ssh"
 	chown -R "${uid}:${user_gid}" "$home_path"
 	umask "$umask_prev"
 
 	# Register...
-	wok_repo_module_add "www" "$domain"
-	wok_repo_module_index_add "www" "uid" "$uid"
-	wok_repo_module_data_set "www" "$domain" "uid" "$uid"
+	wok_repo_module_add "postgres" "$domain"
+	wok_repo_module_index_add "postgres" "uid" "$uid"
+	wok_repo_module_data_set "postgres" "$domain" "uid" "$uid"
 }
 
-wok_www_has()
+wok_postgres_has()
 {
 	local domain="$1"
 
-	wok_repo_module_has www "$domain"
+	wok_repo_module_has postgres "$domain"
 }
 
-wok_www_list()
+wok_postgres_list()
 {
-	wok_repo_module_list www | sort
+	wok_repo_module_list postgres | sort
 }
 
-wok_www_remove()
+wok_postgres_remove()
 {
 	local domain="$1"
 
 	local uid
 	local home_path
-	local www_path
+	local postgres_path
 
-	if ! wok_www_has "$domain"; then
-		wok_perror "Domain '${domain}' is not bound to 'www' module."
+	if ! wok_postgres_has "$domain"; then
+		wok_perror "Domain '${domain}' is not bound to 'postgres' module."
 		wok_exit $EXIT_ERR_USR
 	fi
 
-	uid="$(wok_www_puid "$domain")"
-	home_path="$(wok_config_get wok_www home_path_base)/${uid}"
-	www_path="$(wok_config_get wok_www www_path_base)/${domain}"
+	uid="$(wok_postgres_puid "$domain")"
+	home_path="$(wok_config_get wok_postgres home_path_base)/${uid}"
+	postgres_path="$(wok_config_get wok_postgres postgres_path_base)/${domain}"
 
 	if ! egrep -q "^${uid}:" /etc/passwd; then
 		wok_perror "System user '${uid}' does not exist on this host."
@@ -187,8 +187,8 @@ wok_www_remove()
 		wok_perror "Home directory '${home_path}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ ! -d $www_path ]]; then
-		wok_perror "WWW directory '${www_path}' does not exist."
+	if [[ ! -d $postgres_path ]]; then
+		wok_perror "WWW directory '${postgres_path}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -200,32 +200,33 @@ wok_www_remove()
 	if [[ -d $home_path ]]; then
 		rm -rf "$home_path"
 	fi
-	rm -rf "$www_path"
+	rm -rf "$postgres_path"
 
 	# Unregister...
-	wok_repo_module_remove "www" "$domain"
-	wok_repo_module_index_remove "www" "uid" "$uid"
-	wok_repo_module_data_remove "www" "$domain"
+	wok_repo_module_remove "postgres" "$domain"
+	wok_repo_module_index_remove "postgres" "uid" "$uid"
+	wok_repo_module_data_remove "postgres" "$domain"
 }
 
-wok_www_puid()
+wok_postgres_puid()
 {
 	local domain="$1"
 
-	if ! wok_www_has "$domain"; then
-		wok_perror "Domain ${domain} is not managed by 'www' module."
+	if ! wok_postgres_has "$domain"; then
+		wok_perror "Domain ${domain} is not managed by 'postgres' module."
 		wok_exit $WOK_ERR_SYS
 	fi
 
-	wok_repo_module_data_get "www" "$domain" "uid"
+	wok_repo_module_data_get "postgres" "$domain" "uid"
 }
 
-wok_www_handle()
+wok_postgres_handle()
 {
 	# Argument vars
 	local action=""
 	local domain=""
 	local interactive=false
+	local passwd=""
 	local report_log=""
 	local force=false
 
@@ -240,12 +241,16 @@ wok_www_handle()
 		case "$arg" in
 
 			-h|--help)
-				wok_www_pusage;;
+				wok_postgres_pusage;;
 
 			-i|--interactive)
 				interactive=true;;
 
-			-p*|--password=*);;
+			-p*|--password=*)
+				if ! passwd="$(arg_parseValue "$arg")"; then
+					wok_perror "Invalid usage."
+					wok_exit $EXIT_ERR_USR
+				fi;;
 
 			-f|--force)
 				force=true;;
@@ -275,7 +280,7 @@ wok_www_handle()
 
 	# At least one argument is required: the action to perform
 	if [[ ${#args_remain[@]} -lt 1 ]]; then
-		wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+		wok_perror "Invalid usage. See '${WOK_COMMAND} postgres --help'."
 		wok_exit $EXIT_ERR_USR
 	fi
 
@@ -286,28 +291,28 @@ wok_www_handle()
 
 		add)
 			if [[ ${#args_remain[@]} -ne 1 ]]; then
-				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_perror "Invalid usage. See '${WOK_COMMAND} postgres --help'."
 				wok_exit $EXIT_ERR_USR
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
 
-			cmd=(wok_www_add "$domain" "$interactive")
-			if ! ui_showProgress "Binding domain '${domain}' to 'www' module" "${cmd[@]}"; then
+			cmd=(wok_postgres_add "$domain" "$interactive" "$password")
+			if ! ui_showProgress "Binding domain '${domain}' to 'postgres' module" "${cmd[@]}"; then
 				return 1
 			fi
 
 			if [[ -n $report_log ]]; then
-				wok_report_insl report_log "www:"
-				wok_report_insl report_log "    uid: %s" "$(wok_repo_module_data_get "www" "$domain" "uid")"
+				wok_report_insl report_log "postgres:"
+				wok_report_insl report_log "    uid: %s" "$(wok_repo_module_data_get "postgres" "$domain" "uid")"
 			fi;;
 
 		list|ls)
-			wok_www_list
+			wok_postgres_list
 			return $?;;
 
 		remove|rm)
 			if [[ ${#args_remain[@]} -ne 1 ]]; then
-				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_perror "Invalid usage. See '${WOK_COMMAND} postgres --help'."
 				wok_exit $EXIT_ERR_USR
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
@@ -317,12 +322,12 @@ wok_www_handle()
 				return 0
 			fi
 
-			cmd=(wok_www_remove "$domain")
-			ui_showProgress "Unbinding domain '${domain}' from 'www' module" "${cmd[@]}"
+			cmd=(wok_postgres_remove "$domain")
+			ui_showProgress "Unbinding domain '${domain}' from 'postgres' module" "${cmd[@]}"
 			return $?;;
 
 		*)
-			wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+			wok_perror "Invalid usage. See '${WOK_COMMAND} postgres --help'."
 			wok_exit $EXIT_ERR_USR;;
 
 	esac

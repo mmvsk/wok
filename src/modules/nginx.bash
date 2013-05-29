@@ -15,24 +15,22 @@
 # License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public
-# License along with Wok. If not, see <http://www.gnu.org/licenses/>.
+# License along with Wok. If not, see <http://nginx.gnu.org/licenses/>.
 #
 
-WOK_WWW_USERDEL_CMD="userdel -f"
-
-wok_www_describe()
+wok_nginx_describe()
 {
-	echo "The www module handles system users and directories"
+	echo "The nginx module handles the nginx HTTP server configuration"
 }
 
-wok_www_pdeps()
+wok_nginx_pdeps()
 {
-	echo
+	echo www
 }
 
-wok_www_pusage()
+wok_nginx_pusage()
 {
-	echo "Usage: ${WOK_COMMAND} www [--help|-h] <command> [<args>]"
+	echo "Usage: ${WOK_COMMAND} nginx [--help|-h] <command> [<args>]"
 	echo
 	echo "Commands:"
 	echo
@@ -47,36 +45,81 @@ wok_www_pusage()
 	echo
 }
 
-wok_www_add()
+wok_nginx_add()
 {
 	local domain="$1"
 	local interactive="$2"
 
-	local uid
-	local uid_index
-	local user_gid="$(wok_config_get wok_www user_gid)"
-	local user_shell="$(wok_config_get wok_www user_shell)"
-	local home_path_base="$(wok_config_get wok_www home_path_base)"
-	local www_path_base="$(wok_config_get wok_www www_path_base)"
-	local home_template="$(wok_config_get wok_www home_template)"
-	local www_template="$(wok_config_get wok_www www_template)"
-	local home_path
-	local www_path
-	local umask_prev
+	local www_path=#FIND HERE WWW PATH FROM WOK_WWW
+	local vhost_template="$(wok_config_get wok_nginx vhost_template)"
+
+# TODO TBC
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
 
 	if ! wok_repo_has "$domain"; then
 		wok_perror "Domain '${domain}' is not managed by Wok."
 		wok_exit $EXIT_ERR_USR
 	fi
 
-	if wok_www_has "$domain"; then
-		wok_perror "Domain '${domain}' is already bound to 'www' module."
+	if wok_nginx_has "$domain"; then
+		wok_perror "Domain '${domain}' is already bound to 'nginx' module."
 		wok_exit $EXIT_ERR_USR
 	fi
 
 	# Generate system UID
-	uid_index="$(wok_repo_module_index_getPath www uid)"
-	if ! uid="$(str_slugify "$domain" 32 "www-" "$uid_index")"; then
+	uid_index="$(wok_repo_module_index_getPath nginx uid)"
+	if ! uid="$(str_slugify "$domain" 32 "nginx-" "$uid_index")"; then
 		wok_perror "Could not create a slug for '${domain}'"
 		wok_exit $EXIT_ERR_SYS
 	fi
@@ -86,22 +129,22 @@ wok_www_add()
 		wok_perror "Home base directory '${home_path_base}' does not exist or is not writable."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ ! -d "$www_path_base" || ! -w "$www_path_base" ]]; then
-		wok_perror "WWW base directory '${www_path_base}' does not exist or is not writable."
+	if [[ ! -d "$nginx_path_base" || ! -w "$nginx_path_base" ]]; then
+		wok_perror "WWW base directory '${nginx_path_base}' does not exist or is not writable."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	# Generate paths
 	home_path="${home_path_base}/${uid}"
-	www_path="${www_path_base}/${domain}"
+	nginx_path="${nginx_path_base}/${domain}"
 
 	# Verify paths availability
 	if [[ -e "$home_path" ]]; then
 		wok_perror "Home directory '${home_path}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ -e "$www_path" ]]; then
-		wok_perror "WWW directory '${www_path}' already exists."
+	if [[ -e "$nginx_path" ]]; then
+		wok_perror "WWW directory '${nginx_path}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -110,8 +153,8 @@ wok_www_add()
 		wok_perror "Home template '${home_template}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ ! -e "$www_template" ]]; then
-		wok_perror "WWW template '${www_template}' does not exist."
+	if [[ ! -e "$nginx_template" ]]; then
+		wok_perror "WWW template '${nginx_template}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -121,62 +164,62 @@ wok_www_add()
 		wok_exit $EXIT_ERR_SYS
 	fi
 
-	# Create www direcotry
+	# Create nginx direcotry
 	umask_prev="$(umask)"
-	umask "$(wok_config_get wok_www www_umask)"
-	if ! cp -r "$www_template" "$www_path"; then
-		wok_perror "Could not create www directory '${www_path}'."
+	umask "$(wok_config_get wok_nginx nginx_umask)"
+	if ! cp -r "$nginx_template" "$nginx_path"; then
+		wok_perror "Could not create nginx directory '${nginx_path}'."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	chown -R "${uid}:${user_gid}" "$www_path"
+	chown -R "${uid}:${user_gid}" "$nginx_path"
 	umask "$umask_prev"
 
 	# Create home directory
 	umask_prev="$(umask)"
-	umask "$(wok_config_get wok_www home_umask)"
+	umask "$(wok_config_get wok_nginx home_umask)"
 	if ! cp -r "$home_template" "$home_path"; then
 		wok_perror "Could not create home directory '${home_path}'."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	ln -s "$www_path" "${home_path}/www"
+	ln -s "$nginx_path" "${home_path}/nginx"
 	chmod -R 700 "${home_path}/.ssh"
 	chown -R "${uid}:${user_gid}" "$home_path"
 	umask "$umask_prev"
 
 	# Register...
-	wok_repo_module_add "www" "$domain"
-	wok_repo_module_index_add "www" "uid" "$uid"
-	wok_repo_module_data_set "www" "$domain" "uid" "$uid"
+	wok_repo_module_add "nginx" "$domain"
+	wok_repo_module_index_add "nginx" "uid" "$uid"
+	wok_repo_module_data_set "nginx" "$domain" "uid" "$uid"
 }
 
-wok_www_has()
+wok_nginx_has()
 {
 	local domain="$1"
 
-	wok_repo_module_has www "$domain"
+	wok_repo_module_has nginx "$domain"
 }
 
-wok_www_list()
+wok_nginx_list()
 {
-	wok_repo_module_list www | sort
+	wok_repo_module_list nginx | sort
 }
 
-wok_www_remove()
+wok_nginx_remove()
 {
 	local domain="$1"
 
 	local uid
 	local home_path
-	local www_path
+	local nginx_path
 
-	if ! wok_www_has "$domain"; then
-		wok_perror "Domain '${domain}' is not bound to 'www' module."
+	if ! wok_nginx_has "$domain"; then
+		wok_perror "Domain '${domain}' is not bound to 'nginx' module."
 		wok_exit $EXIT_ERR_USR
 	fi
 
-	uid="$(wok_www_puid "$domain")"
-	home_path="$(wok_config_get wok_www home_path_base)/${uid}"
-	www_path="$(wok_config_get wok_www www_path_base)/${domain}"
+	uid="$(wok_nginx_puid "$domain")"
+	home_path="$(wok_config_get wok_nginx home_path_base)/${uid}"
+	nginx_path="$(wok_config_get wok_nginx nginx_path_base)/${domain}"
 
 	if ! egrep -q "^${uid}:" /etc/passwd; then
 		wok_perror "System user '${uid}' does not exist on this host."
@@ -187,8 +230,8 @@ wok_www_remove()
 		wok_perror "Home directory '${home_path}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ ! -d $www_path ]]; then
-		wok_perror "WWW directory '${www_path}' does not exist."
+	if [[ ! -d $nginx_path ]]; then
+		wok_perror "WWW directory '${nginx_path}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -200,27 +243,15 @@ wok_www_remove()
 	if [[ -d $home_path ]]; then
 		rm -rf "$home_path"
 	fi
-	rm -rf "$www_path"
+	rm -rf "$nginx_path"
 
 	# Unregister...
-	wok_repo_module_remove "www" "$domain"
-	wok_repo_module_index_remove "www" "uid" "$uid"
-	wok_repo_module_data_remove "www" "$domain"
+	wok_repo_module_remove "nginx" "$domain"
+	wok_repo_module_index_remove "nginx" "uid" "$uid"
+	wok_repo_module_data_remove "nginx" "$domain"
 }
 
-wok_www_puid()
-{
-	local domain="$1"
-
-	if ! wok_www_has "$domain"; then
-		wok_perror "Domain ${domain} is not managed by 'www' module."
-		wok_exit $WOK_ERR_SYS
-	fi
-
-	wok_repo_module_data_get "www" "$domain" "uid"
-}
-
-wok_www_handle()
+wok_nginx_handle()
 {
 	# Argument vars
 	local action=""
@@ -240,7 +271,7 @@ wok_www_handle()
 		case "$arg" in
 
 			-h|--help)
-				wok_www_pusage;;
+				wok_nginx_pusage;;
 
 			-i|--interactive)
 				interactive=true;;
@@ -275,7 +306,7 @@ wok_www_handle()
 
 	# At least one argument is required: the action to perform
 	if [[ ${#args_remain[@]} -lt 1 ]]; then
-		wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+		wok_perror "Invalid usage. See '${WOK_COMMAND} nginx --help'."
 		wok_exit $EXIT_ERR_USR
 	fi
 
@@ -286,28 +317,27 @@ wok_www_handle()
 
 		add)
 			if [[ ${#args_remain[@]} -ne 1 ]]; then
-				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_perror "Invalid usage. See '${WOK_COMMAND} nginx --help'."
 				wok_exit $EXIT_ERR_USR
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
 
-			cmd=(wok_www_add "$domain" "$interactive")
-			if ! ui_showProgress "Binding domain '${domain}' to 'www' module" "${cmd[@]}"; then
+			cmd=(wok_nginx_add "$domain" "$interactive")
+			if ! ui_showProgress "Binding domain '${domain}' to 'nginx' module" "${cmd[@]}"; then
 				return 1
 			fi
 
 			if [[ -n $report_log ]]; then
-				wok_report_insl report_log "www:"
-				wok_report_insl report_log "    uid: %s" "$(wok_repo_module_data_get "www" "$domain" "uid")"
+				wok_report_insl report_log "nginx: ~"
 			fi;;
 
 		list|ls)
-			wok_www_list
+			wok_nginx_list
 			return $?;;
 
 		remove|rm)
 			if [[ ${#args_remain[@]} -ne 1 ]]; then
-				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_perror "Invalid usage. See '${WOK_COMMAND} nginx --help'."
 				wok_exit $EXIT_ERR_USR
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
@@ -317,12 +347,12 @@ wok_www_handle()
 				return 0
 			fi
 
-			cmd=(wok_www_remove "$domain")
-			ui_showProgress "Unbinding domain '${domain}' from 'www' module" "${cmd[@]}"
+			cmd=(wok_nginx_remove "$domain")
+			ui_showProgress "Unbinding domain '${domain}' from 'nginx' module" "${cmd[@]}"
 			return $?;;
 
 		*)
-			wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+			wok_perror "Invalid usage. See '${WOK_COMMAND} nginx --help'."
 			wok_exit $EXIT_ERR_USR;;
 
 	esac

@@ -202,7 +202,6 @@ wok_add()
 	# Create the report
 	wok_report_create report
 	wok_report_insl report "domain: %s" "$domain"
-	wok_report_insl report ""
 
 	# Determine module arguments
 	param=()
