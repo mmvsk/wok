@@ -177,8 +177,8 @@ wok_www_remove()
 	fi
 
 	uid="$(wok_www_puid "$domain")"
-	home_path="$(wok_config_get wok_www home_path_base)/${domain}"
-	www_path="$(wok_config_get wok_www www_path_base)/${uid}"
+	home_path="$(wok_config_get wok_www home_path_base)/${uid}"
+	www_path="$(wok_config_get wok_www www_path_base)/${domain}"
 
 	if ! egrep -q "^${uid}:" /etc/passwd; then
 		wok_perror "System user '${uid}' does not exist on this host."
