@@ -60,6 +60,8 @@ wok_www_add()
 	local user_shell="$(wok_config_get wok_www user_shell)"
 	local home_path_base="$(wok_config_get wok_www home_path_base)"
 	local www_path_base="$(wok_config_get wok_www www_path_base)"
+	local home_template="$(wok_config_get wok_www home_template_path)"
+	local www_template="$(wok_config_get wok_www www_template_path)"
 	local home_path
 	local www_path
 	local umask_prev
@@ -105,6 +107,16 @@ wok_www_add()
 		wok_exit $EXIT_ERR_SYS
 	fi
 
+	# Verify templates existence
+	if [[ ! -e "$home_template" ]]; then
+		wok_perror "Home template '${home_template}' does not exist."
+		wok_exit $EXIT_ERR_SYS
+	fi
+	if [[ ! -e "$www_template" ]]; then
+		wok_perror "WWW template '${www_template}' does not exist."
+		wok_exit $EXIT_ERR_SYS
+	fi
+
 	# Create system user
 	if ! useradd -g "$user_gid" -d "$home_path" -s "$user_shell" "$uid"; then
 		wok_perror "Could not create system user '${uid}'."
@@ -114,7 +126,7 @@ wok_www_add()
 	# Create www direcotry
 	umask_prev="$(umask)"
 	umask "$(wok_config_get wok_www www_umask)"
-	if ! cp -r "$(wok_config_get wok_www www_template_path)" "$www_path"; then
+	if ! cp -r "$www_template" "$www_path"; then
 		wok_perror "Could not create www directory '${www_path}'."
 		wok_exit $EXIT_ERR_SYS
 	fi
@@ -124,7 +136,7 @@ wok_www_add()
 	# Create home directory
 	umask_prev="$(umask)"
 	umask "$(wok_config_get wok_www home_umask)"
-	if ! cp -r "$(wok_config_get wok_www home_template_path)" "$home_path"; then
+	if ! cp -r "$home_template" "$home_path"; then
 		wok_perror "Could not create home directory '${home_path}'."
 		wok_exit $EXIT_ERR_SYS
 	fi
