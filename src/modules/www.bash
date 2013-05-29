@@ -84,69 +84,66 @@ wok_www_add()
 	fi
 
 	# Verify base paths
-	#if [[ ! -d "$home_path_base" || ! -w "$home_path_base" ]]; then
-		#wok_perror "Home base directory '${home_path_base}' does not exist or is not writable."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
-	#if [[ ! -d "$www_path_base" || ! -w "$www_path_base" ]]; then
-		#wok_perror "WWW base directory '${www_path_base}' does not exist or is not writable."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
+	if [[ ! -d "$home_path_base" || ! -w "$home_path_base" ]]; then
+		wok_perror "Home base directory '${home_path_base}' does not exist or is not writable."
+		wok_exit $EXIT_ERR_SYS
+	fi
+	if [[ ! -d "$www_path_base" || ! -w "$www_path_base" ]]; then
+		wok_perror "WWW base directory '${www_path_base}' does not exist or is not writable."
+		wok_exit $EXIT_ERR_SYS
+	fi
 
 	# Generate paths
 	home_path="${home_path_base}/${uid}"
 	www_path="${www_path_base}/${domain}"
 
-	echo home=$home_path >>~/board/z
-	echo www=$www_path >>~/board/z
-
 	# Verify paths availability
-	#if [[ -e "$home_path" ]]; then
-		#wok_perror "Home directory '${home_path}' already exists."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
-	#if [[ -e "$www_path" ]]; then
-		#wok_perror "WWW directory '${www_path}' already exists."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
+	if [[ -e "$home_path" ]]; then
+		wok_perror "Home directory '${home_path}' already exists."
+		wok_exit $EXIT_ERR_SYS
+	fi
+	if [[ -e "$www_path" ]]; then
+		wok_perror "WWW directory '${www_path}' already exists."
+		wok_exit $EXIT_ERR_SYS
+	fi
 
 	# Verify templates existence
-	#if [[ ! -e "$home_template" ]]; then
-		#wok_perror "Home template '${home_template}' does not exist."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
-	#if [[ ! -e "$www_template" ]]; then
-		#wok_perror "WWW template '${www_template}' does not exist."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
+	if [[ ! -e "$home_template" ]]; then
+		wok_perror "Home template '${home_template}' does not exist."
+		wok_exit $EXIT_ERR_SYS
+	fi
+	if [[ ! -e "$www_template" ]]; then
+		wok_perror "WWW template '${www_template}' does not exist."
+		wok_exit $EXIT_ERR_SYS
+	fi
 
 	# Create system user
-	#if ! useradd -g "$user_gid" -d "$home_path" -s "$user_shell" "$uid"; then
-		#wok_perror "Could not create system user '${uid}'."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
+	if ! useradd -g "$user_gid" -d "$home_path" -s "$user_shell" "$uid"; then
+		wok_perror "Could not create system user '${uid}'."
+		wok_exit $EXIT_ERR_SYS
+	fi
 
 	# Create www direcotry
-	#umask_prev="$(umask)"
-	#umask "$(wok_config_get wok_www www_umask)"
-	#if ! cp -r "$www_template" "$www_path"; then
-		#wok_perror "Could not create www directory '${www_path}'."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
-	#chown -R "${uid}:${user_gid}" "$www_path"
-	#umask "$umask_prev"
+	umask_prev="$(umask)"
+	umask "$(wok_config_get wok_www www_umask)"
+	if ! cp -r "$www_template" "$www_path"; then
+		wok_perror "Could not create www directory '${www_path}'."
+		wok_exit $EXIT_ERR_SYS
+	fi
+	chown -R "${uid}:${user_gid}" "$www_path"
+	umask "$umask_prev"
 
 	# Create home directory
-	#umask_prev="$(umask)"
-	#umask "$(wok_config_get wok_www home_umask)"
-	#if ! cp -r "$home_template" "$home_path"; then
-		#wok_perror "Could not create home directory '${home_path}'."
-		#wok_exit $EXIT_ERR_SYS
-	#fi
-	#ln -s "$www_path" "${home_path}/www"
-	#chmod -R 700 "${home_path}/.ssh"
-	#chown -R "${uid}:${user_gid}" "$home_path"
-	#umask "$umask_prev"
+	umask_prev="$(umask)"
+	umask "$(wok_config_get wok_www home_umask)"
+	if ! cp -r "$home_template" "$home_path"; then
+		wok_perror "Could not create home directory '${home_path}'."
+		wok_exit $EXIT_ERR_SYS
+	fi
+	ln -s "$www_path" "${home_path}/www"
+	chmod -R 700 "${home_path}/.ssh"
+	chown -R "${uid}:${user_gid}" "$home_path"
+	umask "$umask_prev"
 
 	# Register...
 	wok_repo_module_add "www" "$domain"
