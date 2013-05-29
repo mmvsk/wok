@@ -112,8 +112,7 @@ wok_report_send()
 	[[ $# -lt 2 ]] && return 1
 
 	[[ -n "$subject" ]]    && mailx_param=("${mailx_param[@]}" -s "$subject")
-	#[[ -n "$email_from" ]] && mailx_param=("${mailx_param[@]}" -r "$email_from")
-	[[ -n "$email_from" ]] && mailx_param=("${mailx_param[@]}" -a "From: ${email_from}")
+	[[ -n "$email_from" ]] && mailx_param=("${mailx_param[@]}" -r "$email_from")
 
 	# Requires BSD mailx!
 	"$WOK_REPORT_MAIL_CMD" "${mailx_param[@]}" "$email_to" <"$report"

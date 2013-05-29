@@ -4,7 +4,7 @@ Wok
 Dependencies
 ------------
 
-bsd-mailx
+heirloom-mailx
 
 Installation
 ------------
