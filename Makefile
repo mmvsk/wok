@@ -85,6 +85,14 @@ uninstall:
 		--conf-path="$(conf_path)" \
 		--repo-path="$(repo_path)"
 
+reinstall:
+	@./install.sh \
+		--reinstall \
+		--wok-path="$(wok_path)" \
+		--sbin-path="$(sbin_path)" \
+		--conf-path="$(conf_path)" \
+		--repo-path="$(repo_path)"
+
 purge:
 	@./install.sh \
 		--purge \
@@ -101,7 +109,7 @@ hostconfig:
 		|| (echo "Wok is not installed on this system" >&2; exit 1)
 	@$${EDITOR:-vi} /usr/local/etc/wok/config
 
-.PHONY: default test clean install uninstall purge hostconfig
+.PHONY: default test clean install uninstall reinstall purge hostconfig
 
 #-----------------------------------------------------------------------
 # Targets
