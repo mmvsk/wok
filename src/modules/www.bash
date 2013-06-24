@@ -174,7 +174,7 @@ wok_www_remove()
 		wok_exit $EXIT_ERR_USR
 	fi
 
-	uid="$(wok_www_puid "$domain")"
+	uid="$(wok_www_getUID "$domain")"
 	home_path="$(wok_config_get wok_www home_path_base)/${uid}"
 	www_path="$(wok_config_get wok_www www_path_base)/${domain}"
 
@@ -208,7 +208,7 @@ wok_www_remove()
 	wok_repo_module_data_remove "www" "$domain"
 }
 
-wok_www_puid()
+wok_www_getUID()
 {
 	local domain="$1"
 
@@ -218,6 +218,18 @@ wok_www_puid()
 	fi
 
 	wok_repo_module_data_get "www" "$domain" "uid"
+}
+
+wok_www_getDomainWWWPath()
+{
+	local domain="$1"
+
+	if ! wok_www_has "$domain"; then
+		wok_perror "Domain ${domain} is not managed by 'www' module."
+		wok_exit $WOK_ERR_SYS
+	fi
+
+	echo "$(wok_config_get wok_www www_path_base)/${domain}"
 }
 
 wok_www_handle()

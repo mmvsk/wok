@@ -50,65 +50,17 @@ wok_nginx_add()
 	local domain="$1"
 	local interactive="$2"
 
-	local www_path=#FIND HERE WWW PATH FROM WOK_WWW
+	local www_path
 	local vhost_template="$(wok_config_get wok_nginx vhost_template)"
-
-# TODO TBC
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
+	local vhost_conf_dir="$(wok_config_get wok_nginx vhost_conf_dir)"
 
 	if ! wok_repo_has "$domain"; then
 		wok_perror "Domain '${domain}' is not managed by Wok."
+		wok_exit $EXIT_ERR_USR
+	fi
+
+	if ! wok_www_has "$domain"; then
+		wok_perror "Domain '${domain}' is not bound to module 'www'."
 		wok_exit $EXIT_ERR_USR
 	fi
 
@@ -117,79 +69,12 @@ wok_nginx_add()
 		wok_exit $EXIT_ERR_USR
 	fi
 
-	# Generate system UID
-	uid_index="$(wok_repo_module_index_getPath nginx uid)"
-	if ! uid="$(str_slugify "$domain" 32 "nginx-" "$uid_index")"; then
-		wok_perror "Could not create a slug for '${domain}'"
-		wok_exit $EXIT_ERR_SYS
-	fi
+	www_path="$(wok_www_getDomainWWWPath "$domain")"
 
-	# Verify base paths
-	if [[ ! -d "$home_path_base" || ! -w "$home_path_base" ]]; then
-		wok_perror "Home base directory '${home_path_base}' does not exist or is not writable."
-		wok_exit $EXIT_ERR_SYS
-	fi
-	if [[ ! -d "$nginx_path_base" || ! -w "$nginx_path_base" ]]; then
-		wok_perror "WWW base directory '${nginx_path_base}' does not exist or is not writable."
-		wok_exit $EXIT_ERR_SYS
-	fi
-
-	# Generate paths
-	home_path="${home_path_base}/${uid}"
-	nginx_path="${nginx_path_base}/${domain}"
-
-	# Verify paths availability
-	if [[ -e "$home_path" ]]; then
-		wok_perror "Home directory '${home_path}' already exists."
-		wok_exit $EXIT_ERR_SYS
-	fi
-	if [[ -e "$nginx_path" ]]; then
-		wok_perror "WWW directory '${nginx_path}' already exists."
-		wok_exit $EXIT_ERR_SYS
-	fi
-
-	# Verify templates existence
-	if [[ ! -e "$home_template" ]]; then
-		wok_perror "Home template '${home_template}' does not exist."
-		wok_exit $EXIT_ERR_SYS
-	fi
-	if [[ ! -e "$nginx_template" ]]; then
-		wok_perror "WWW template '${nginx_template}' does not exist."
-		wok_exit $EXIT_ERR_SYS
-	fi
-
-	# Create system user
-	if ! useradd -g "$user_gid" -d "$home_path" -s "$user_shell" "$uid"; then
-		wok_perror "Could not create system user '${uid}'."
-		wok_exit $EXIT_ERR_SYS
-	fi
-
-	# Create nginx direcotry
-	umask_prev="$(umask)"
-	umask "$(wok_config_get wok_nginx nginx_umask)"
-	if ! cp -r "$nginx_template" "$nginx_path"; then
-		wok_perror "Could not create nginx directory '${nginx_path}'."
-		wok_exit $EXIT_ERR_SYS
-	fi
-	chown -R "${uid}:${user_gid}" "$nginx_path"
-	umask "$umask_prev"
-
-	# Create home directory
-	umask_prev="$(umask)"
-	umask "$(wok_config_get wok_nginx home_umask)"
-	if ! cp -r "$home_template" "$home_path"; then
-		wok_perror "Could not create home directory '${home_path}'."
-		wok_exit $EXIT_ERR_SYS
-	fi
-	ln -s "$nginx_path" "${home_path}/nginx"
-	chmod -R 700 "${home_path}/.ssh"
-	chown -R "${uid}:${user_gid}" "$home_path"
-	umask "$umask_prev"
+	cp "$vhost_template" "${vhost_conf_dir}/${domain}.conf"
 
 	# Register...
 	wok_repo_module_add "nginx" "$domain"
-	wok_repo_module_index_add "nginx" "uid" "$uid"
-	wok_repo_module_data_set "nginx" "$domain" "uid" "$uid"
 }
 
 wok_nginx_has()
