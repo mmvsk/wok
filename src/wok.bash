@@ -80,6 +80,9 @@ export PATH="${WOK_UTIL_PATH}:${PATH}"
 # Wok control
 #-----------------------------------------------------------------------
 
+#
+# Call exit callbacks and exit with the given status
+#
 wok_exit()
 {
 	local exit_status=$1
@@ -95,6 +98,9 @@ wok_exit()
 	exit $exit_status
 }
 
+#
+# Print an error message and exit
+#
 wok_perror()
 {
 	local message="$1"
@@ -102,6 +108,9 @@ wok_perror()
 	echo "$message" >&2
 }
 
+#
+# Print the usage of the command-line interface
+#
 wok_pusage()
 {
 	local module
@@ -133,6 +142,9 @@ wok_pusage()
 	echo
 }
 
+#
+# Handle the command-line call
+#
 wok_handle()
 {
 	local arg
@@ -211,4 +223,5 @@ wok_handle()
 # Wok Execution
 #-----------------------------------------------------------------------
 
+# Execute wok!
 wok_handle "$@"
