@@ -32,7 +32,7 @@ WOK_UTIL_PATH={{wok_util_path}}
 #-----------------------------------------------------------------------
 
 WOK_NAME="Wok"
-WOK_VERSION="1.0-dev"
+WOK_VERSION="2.0.0-alpha"
 WOK_COMMAND="$(basename ${0})"
 
 # Exit statuses (note: a system error should be fatal)
