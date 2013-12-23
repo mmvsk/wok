@@ -35,6 +35,9 @@ sbin_path = /usr/local/sbin/wok
 conf_path = /usr/local/etc/wok
 repo_path = /var/local/lib/wok
 
+wok_version = $(shell cat "Version")
+
+# No questions :)
 shitify = 1
 
 # Don't change!
@@ -50,6 +53,9 @@ common_src  = $(wildcard src/common/*.bash)
 #-----------------------------------------------------------------------
 
 default: wok
+
+v:
+	@echo "<$(wok_version)>"
 
 check:
 	@echo list: $(modules)
@@ -188,9 +194,10 @@ dist/conf/wok.ini: src/wok.ini $(modules_ini)
 	@$(foreach path,$(modules_ini),(echo; cat $(path)) >>"$@";)
 	@echo "done."
 
-dist/wok/wok: src/*.bash $(common_src) $(modules_src)
+dist/wok/wok: src/*.bash $(common_src) $(modules_src) Version
 	@echo -n "Building $@..."
 	@(echo "#!/bin/bash"; cat src/wok.bash) >"$@" && chmod +x "$@"
+	@sed -i 's:{{wok_version}}:"$(wok_version)":g' "$@"
 	@sed -i 's/{{wok_module_list}}/$(foreach module,$(modules),"$(module)")/g' "$@"
 	@sed -i 's:{{wok_config_file}}:"$(conf_path)/wok.ini":g' "$@"
 	@sed -i 's:{{wok_repo_path}}:"$(repo_path)":g' "$@"
