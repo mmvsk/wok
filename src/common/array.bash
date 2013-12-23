@@ -28,18 +28,17 @@
 #     #...
 #   fi
 #
-# Given array name mustn't begin with '' (in fact, it never
-# should begin with '__').
+# The array name can't begin with '__'
 #
 array_has()
 {
-	local array_ref="${1}[@]"
-	local array=("${!array_ref}")
-	local value="$2"
-	local array_val
+	local __array_ref="${1}[@]"
+	local __array=("${!__array_ref}")
+	local __value="$2"
+	local __array_val
 
-	for array_val in "${array[@]}"; do
-		if [[ $value == $array_val ]]; then
+	for __array_val in "${__array[@]}"; do
+		if [[ $__value == $__array_val ]]; then
 			return 0
 		fi
 	done
