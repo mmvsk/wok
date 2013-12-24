@@ -51,8 +51,8 @@ wok_nginx_add()
 	local interactive="$2"
 
 	local www_path
-	local vhost_template="$(wok_config_get wok_nginx vhost_template)"
-	local vhost_conf_dir="$(wok_config_get wok_nginx vhost_conf_dir)"
+	local nginx_vhost_template="$(wok_config_get wok_www nginx_vhost_template)"
+	local nginx_vhost_dir="$(wok_config_get wok_www nginx_vhost_dir)"
 
 	if ! wok_repo_has "$domain"; then
 		wok_perror "Domain '${domain}' is not managed by Wok."
@@ -69,9 +69,9 @@ wok_nginx_add()
 		wok_exit $EXIT_ERR_USR
 	fi
 
-	www_path="$(wok_www_getDomainWWWPath "$domain")"
+	www_path="$(wok_www_getWwwPath "$domain")"
 
-	cp "$vhost_template" "${vhost_conf_dir}/${domain}.conf"
+	cp "$nginx_vhost_template" "${nginx_vhost_dir}/${domain}.conf"
 
 	# Register...
 	wok_repo_module_add "nginx" "$domain"
@@ -103,8 +103,8 @@ wok_nginx_remove()
 	fi
 
 	uid="$(wok_nginx_puid "$domain")"
-	home_path="$(wok_config_get wok_nginx home_path_base)/${uid}"
-	nginx_path="$(wok_config_get wok_nginx nginx_path_base)/${domain}"
+	home_path="$(wok_config_get wok_www home_path_base)/${uid}"
+	nginx_path="$(wok_config_get wok_www nginx_path_base)/${domain}"
 
 	if ! egrep -q "^${uid}:" /etc/passwd; then
 		wok_perror "System user '${uid}' does not exist on this host."

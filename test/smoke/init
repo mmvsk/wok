@@ -12,6 +12,14 @@ make clean && make \
 	repo_path="$test"/repo
 
 ./install.sh \
+	--purge \
+	--no-root \
+	--wok-path="$test"/share \
+	--sbin-path="$test"/wok \
+	--conf-path="$test"/conf \
+	--repo-path="$test"/repo
+
+./install.sh \
 	--reinstall \
 	--no-root \
 	--wok-path="$test"/share \

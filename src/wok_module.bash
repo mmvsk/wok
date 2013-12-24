@@ -18,6 +18,9 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
+#
+# Tell if the module exists in this installation of Wok
+#
 wok_module_has()
 {
 	local module="$1"
@@ -29,6 +32,9 @@ wok_module_has()
 	return 1
 }
 
+#
+# Describe a module
+#
 wok_module_describe()
 {
 	local module="$1"
@@ -49,7 +55,8 @@ wok_module_describe()
 }
 
 #
-# Return a simple word list separated by a space
+# Print module dependencies (return a list of modules names separated by
+# a space)
 #
 wok_module_pdeps()
 {
@@ -92,6 +99,9 @@ wok_module_pname()
 	echo "$name"
 }
 
+#
+# Execute a module (call its _handle function)
+#
 wok_module_handle()
 {
 	local module="$1"
@@ -110,16 +120,25 @@ wok_module_handle()
 	fi
 }
 
+#
+# Get the list of modules that are allowed to cascade
+#
 wok_module_getAllowedToCascade()
 {
 	wok_config_get wok modules_cascade_allowed
 }
 
+#
+# Get the list of modules that are cascading by default
+#
 wok_module_getCascadeDefaults()
 {
 	wok_config_get wok modules_cascade_defaults
 }
 
+#
+# Resolve the module list dependency
+#
 wok_module_resolveDeps()
 {
 	local __array_ref="$1"
@@ -158,6 +177,9 @@ wok_module_resolveDeps()
 	eval "${__array_ref}=(${__eval_values})"
 }
 
+#
+# Execute a command by different modules in cascade
+#
 wok_module_cascade()
 {
 	local modules_ref="${1}[@]"
