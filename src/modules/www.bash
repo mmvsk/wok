@@ -51,6 +51,7 @@ wok_www_add()
 {
 	local domain="$1"
 	local interactive="$2"
+	local passwd="$2"
 
 	local uid
 	local uid_index
@@ -173,7 +174,9 @@ wok_www_add()
 		wok_exit $EXIT_ERR_SYS
 	fi
 	ln -s "$www_path" "${home_path}/www"
-	chmod -R 700 "${home_path}/.ssh"
+	[[ -d "${home_path}/.ssh" ]] && chmod g=,o= "${home_path}/.ssh"
+	echo "$passwd" > "${www_path}/.pw"
+	chmod 400 "${www_path}/.pw"
 	chown -R "${uid}:${user_gid}" "$home_path"
 	umask "$umask_prev"
 
@@ -288,6 +291,7 @@ wok_www_handle()
 	local action=""
 	local domain=""
 	local interactive=false
+	local passwd=""
 	local report_log=""
 	local force=false
 
@@ -307,7 +311,15 @@ wok_www_handle()
 			-i|--interactive)
 				interactive=true;;
 
-			-p*|--password=*);;
+			-p*|--password=*)
+				if ! passwd="$(arg_parseValue "$arg")"; then
+					wok_perror "Invalid usage."
+					wok_exit $EXIT_ERR_USR
+				fi
+				if ! [[ $passwd =~ $WOK_PASSWD_PATTERN ]]; then
+					wok_perror "The password must match the following pattern: ${WOK_PASSWD_PATTERN}"
+					wok_exit $EXIT_ERR_USR
+				fi;;
 
 			-f|--force)
 				force=true;;
@@ -353,7 +365,7 @@ wok_www_handle()
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
 
-			cmd=(wok_www_add "$domain" "$interactive")
+			cmd=(wok_www_add "$domain" "$interactive" "$passwd")
 			if ! ui_showProgress "Binding domain '${domain}' to 'www' module" "${cmd[@]}"; then
 				return 1
 			fi
