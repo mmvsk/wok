@@ -37,11 +37,28 @@ wok_www_pusage()
 	echo "    list        List domain handled by this module"
 	echo "    add         Add a domain to this module"
 	echo
-	echo "        Usage: ~ [--interactive|-i] <domain>"
+	echo "        Usage: ~ [--interactive|-i] [--with-ssl] <domain>"
 	echo
 	echo "    remove      Remove a domain"
 	echo
 	echo "        Usage: ~ [--force|-f] <domain>"
+	echo
+	echo "    create-ssl  Create an SSL certificate request for the given domain;"
+	echo "                This command can only be called with interactive mode"
+	echo
+	echo "        Usage: ~ --interactive|-i [--force|-f] <domain>"
+	echo
+	echo "    edit-nginx  Edit nginx virtual host configuration using vim"
+	echo
+	echo "        Usage: ~ <domain>"
+	echo
+	echo "    edit-php    Edit PHP FPM pool configuration using vim"
+	echo
+	echo "        Usage: ~ <domain>"
+	echo
+	echo "    edit-passwd Edit the password using vim"
+	echo
+	echo "        Usage: ~ <domain>"
 	echo
 }
 
@@ -194,8 +211,7 @@ wok_www_add()
 	# Register...
 	wok_repo_module_add "www" "$domain"
 	wok_repo_module_index_add "www" "uid" "$uid"
-	wok_repo_module_data_set "www" "$domain" "uid"    "$uid"
-	wok_repo_module_data_set "www" "$domain" "passwd" "$passwd"
+	wok_repo_module_data_set "www" "$domain" "uid" "$uid"
 
 	# Reload PHP and Nginx daemons
 	$php_daemon_command_reload
@@ -307,6 +323,65 @@ wok_www_getWwwPath()
 	echo "$(wok_config_get wok_www www_path_base)/${domain}"
 }
 
+#
+# Create an SSL certificate request (and a temporary self-signed one).
+# It must be run in interactive mode!
+#
+# @param string domain The domain name
+# @param bool   force  Force the replacement of the previous certificate
+#
+wok_www_createSsl()
+{
+	local domain="$1"
+	local force="$2"
+
+	local nginx_ssl_key_size="$(wok_config_get wok_www nginx_ssl_key_size)"
+	local nginx_ssl_dir="$(wok_config_get wok_www nginx_ssl_dir)"
+	local nginx_ssl_key_path="${nginx_ssl_dir}/${domain}.key"
+	local nginx_ssl_csr_path="${nginx_ssl_dir}/${domain}.csr"
+	local nginx_ssl_cer_path="${nginx_ssl_dir}/${domain}.cer"
+
+	if ! wok_www_has "$domain"; then
+		wok_perror "Domain '${domain}' is not bound to 'www' module."
+		wok_exit $EXIT_ERR_USR
+	fi
+
+	# Check if a certificate something already exist
+	if [[ \
+		   -f $nginx_ssl_key_path \
+		|| -f $nginx_ssl_csr_path \
+		|| -f $nginx_ssl_cer_path \
+	]]; then
+		if ! $force && ! ui_confirm "A certificate file already exist. Replace?"; then
+			echo "SSL certfificate signing request aborted."
+			return
+		fi
+
+		if \
+			   [[ -f $nginx_ssl_key_path && ! -w $nginx_ssl_key_path ]] \
+			|| [[ -f $nginx_ssl_csr_path && ! -w $nginx_ssl_csr_path ]] \
+			|| [[ -f $nginx_ssl_cer_path && ! -w $nginx_ssl_cer_path ]] \
+		; then
+			wok_perror "A certificate file already exist but is not deletable (writable)"
+			wok_exit $EXIT_ERR_SYS
+		fi
+	fi
+
+	# Create the private key
+	openssl genrsa -out "$nginx_ssl_key_path" "$nginx_ssl_key_size"
+	chmod 600 "$nginx_ssl_key_path"
+
+	# Create the certificate signing request
+	openssl req -new -key "$nginx_ssl_key_path" -out "$nginx_ssl_csr_path"
+	chmod 600 "$nginx_ssl_csr_path"
+
+	# Create a temporary self-signed certificate
+	openssl x509 -req -in "$nginx_ssl_csr_path" -signkey "$nginx_ssl_key_path" -out "$nginx_ssl_cer_path"
+	chmod 600 "$nginx_ssl_cer_path"
+
+	echo "Certificate created successfully!"
+}
+
 wok_www_handle()
 {
 	# Argument vars
@@ -316,6 +391,7 @@ wok_www_handle()
 	local passwd=""
 	local report_log=""
 	local force=false
+	local with_ssl=false
 
 	# Temp vars
 	local arg
@@ -328,7 +404,8 @@ wok_www_handle()
 		case "$arg" in
 
 			-h|--help)
-				wok_www_pusage;;
+				wok_www_pusage
+				wok_exit $EXIT_OK;;
 
 			-i|--interactive)
 				interactive=true;;
@@ -345,6 +422,9 @@ wok_www_handle()
 
 			-f|--force)
 				force=true;;
+
+			--with-ssl)
+				with_ssl=true;;
 
 			--report-log=*)
 				if ! arg_value="$(arg_parseValue "$arg")"; then
@@ -387,6 +467,11 @@ wok_www_handle()
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
 
+			if $with_ssl && ! $interactive; then
+				wok_perror "Can't create an SSL certificate signing request in non-interactive mode"
+				wok_exit $EXIT_ERR_USR
+			fi
+
 			cmd=(wok_www_add "$domain" "$interactive" "$passwd")
 			if ! ui_showProgress "Binding domain '${domain}' to 'www' module" "${cmd[@]}"; then
 				return 1
@@ -395,6 +480,13 @@ wok_www_handle()
 			if [[ -n $report_log ]]; then
 				wok_report_insl report_log "www:"
 				wok_report_insl report_log "    uid: %s" "$(wok_repo_module_data_get "www" "$domain" "uid")"
+				if $with_ssl; then
+					wok_report_insl report_log "    ssl: yes"
+				fi
+			fi
+
+			if $with_ssl; then
+				wok_www_createSsl  "$domain" "$force"
 			fi;;
 
 		list|ls)
@@ -416,6 +508,57 @@ wok_www_handle()
 			cmd=(wok_www_remove "$domain")
 			ui_showProgress "Unbinding domain '${domain}' from 'www' module" "${cmd[@]}"
 			return $?;;
+
+		create-ssl)
+			if [[ ${#args_remain[@]} -ne 1 ]]; then
+				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_exit $EXIT_ERR_USR
+			fi
+			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
+
+			if ! $interactive; then
+				wok_perror "Can't create an SSL certificate signing request in non-interactive mode"
+				wok_exit $EXIT_ERR_USR
+			fi
+
+			wok_www_createSsl  "$domain" "$force";;
+
+		edit-nginx)
+			if [[ ${#args_remain[@]} -ne 1 ]]; then
+				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_exit $EXIT_ERR_USR
+			fi
+			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
+
+			if ! wok_www_has "$domain"; then
+				wok_perror "Domain '${domain}' is not bound to 'www' module."
+				wok_exit $EXIT_ERR_USR
+			fi
+
+			local nginx_vhost_conf_dir="$(wok_config_get wok_www nginx_vhost_conf_dir)"
+			local nginx_daemon_command_reload=$(wok_config_get wok_www nginx_daemon_command_reload)
+
+			vim "${nginx_vhost_conf_dir}/${domain}.conf" -c "setf nginx"
+			ui_showProgress "Reloading nginx" $nginx_daemon_command_reload;;
+
+		edit-php)
+			if [[ ${#args_remain[@]} -ne 1 ]]; then
+				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_exit $EXIT_ERR_USR
+			fi
+			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
+
+			if ! wok_www_has "$domain"; then
+				wok_perror "Domain '${domain}' is not bound to 'www' module."
+				wok_exit $EXIT_ERR_USR
+			fi
+
+			local uid="$(wok_www_getUid "$domain")"
+			local php_fpm_pool_dir="$(wok_config_get wok_www php_fpm_pool_dir)"
+			local php_daemon_command_reload=$(wok_config_get wok_www php_daemon_command_reload)
+
+			vim "${php_fpm_pool_dir}/${uid}.conf" -c "setf dosini"
+			ui_showProgress "Reloading PHP" $php_daemon_command_reload;;
 
 		*)
 			wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
