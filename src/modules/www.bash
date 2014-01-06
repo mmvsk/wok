@@ -18,8 +18,6 @@
 # License along with Wok. If not, see <http://www.gnu.org/licenses/>.
 #
 
-WOK_WWW_USERDEL_CMD="userdel -f"
-
 wok_www_describe()
 {
 	echo "The www module handles system users, directories, nginx and PHP"
@@ -133,19 +131,19 @@ wok_www_add()
 	fi
 
 	# Verify paths availability
-	if [[ -e "$home_path" ]]; then
+	if [[ -e $home_path ]]; then
 		wok_perror "Home directory '${home_path}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ -e "$www_path" ]]; then
+	if [[ -e $www_path ]]; then
 		wok_perror "Www directory '${www_path}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ -e "$nginx_vhost_conf_path" ]]; then
+	if [[ -e $nginx_vhost_conf_path ]]; then
 		wok_perror "Nginx vhost configuration file '${nginx_vhost_conf_path}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ -e "$php_fpm_pool_path" ]]; then
+	if [[ -e $php_fpm_pool_path ]]; then
 		wok_perror "PHP FPM pool file '${php_fpm_pool_path}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
@@ -219,7 +217,6 @@ wok_www_remove()
 	local uid
 	local home_path
 	local www_path
-	local nginx_vhost_conf_template="$(wok_config_get wok_www nginx_vhost_conf_template)"
 	local nginx_vhost_conf_dir="$(wok_config_get wok_www nginx_vhost_conf_dir)"
 
 	if ! wok_www_has "$domain"; then
@@ -230,6 +227,10 @@ wok_www_remove()
 	uid="$(wok_www_getUid "$domain")"
 	home_path="$(wok_config_get wok_www home_path_base)/${uid}"
 	www_path="$(wok_config_get wok_www www_path_base)/${domain}"
+	local nginx_vhost_conf_path="$(wok_config_get wok_www nginx_vhost_conf_dir)/${domain}.conf"
+	local nginx_daemon_command_reload=$(wok_config_get wok_www nginx_daemon_command_reload)
+	local php_fpm_pool_path="$(wok_config_get wok_www php_fpm_pool_dir)/${uid}.conf"
+	local php_daemon_command_reload=$(wok_config_get wok_www php_daemon_command_reload)
 
 	if ! egrep -q "^${uid}:" /etc/passwd; then
 		wok_perror "System user '${uid}' does not exist on this host."
@@ -244,8 +245,25 @@ wok_www_remove()
 		wok_perror "WWW directory '${www_path}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
+	if [[ ! -f $nginx_vhost_conf_path || ! -w $nginx_vhost_conf_path ]]; then
+		wok_perror "Nginx vhost configuration file '${nginx_vhost_conf_path}' does not exist or is not deletable (writable)"
+		wok_exit $EXIT_ERR_SYS
+	fi
+	if [[ ! -f $php_fpm_pool_path || ! -w $php_fpm_pool_path ]]; then
+		wok_perror "PHP FPM pool file '${php_fpm_pool_path}' does not exist or is not deletable (writable)"
+		wok_exit $EXIT_ERR_SYS
+	fi
 
-	if ! $WOK_WWW_USERDEL_CMD "$uid"; then
+	# Remove Nginx and PHP configuration files
+	rm -f "$nginx_vhost_conf_path"
+	rm -f "$php_fpm_pool_path"
+
+	# Reload PHP and Nginx daemons
+	$nginx_daemon_command_reload
+	$php_daemon_command_reload
+
+	# Remove system user
+	if ! userdel -f "$uid"; then
 		wok_perror "Error deleting system user '${uid}'"
 		wok_exit $EXIT_ERR_SYS
 	fi
