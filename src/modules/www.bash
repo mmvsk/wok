@@ -62,6 +62,7 @@ wok_www_add()
 	local www_template="$(wok_config_get wok_www www_template)"
 	local www_path_base="$(wok_config_get wok_www www_path_base)"
 	local www_path
+	local www_passwd_file="$(wok_config_get wok_www www_passwd_file)"
 	local nginx_vhost_conf_template="$(wok_config_get wok_www nginx_vhost_conf_template)"
 	local nginx_vhost_conf_dir="$(wok_config_get wok_www nginx_vhost_conf_dir)"
 	local nginx_daemon_command_reload=$(wok_config_get wok_www nginx_daemon_command_reload)
@@ -161,6 +162,10 @@ wok_www_add()
 		wok_perror "Could not create www directory '${www_path}'."
 		wok_exit $EXIT_ERR_SYS
 	fi
+	if [[ -n $passwd ]]; then
+		echo "$passwd" > "${www_path}/${www_passwd_file}"
+		chmod 400 "$www_passwd_file"
+	fi
 	chown -R "${uid}:${user_gid}" "$www_path"
 	umask "$umask_prev"
 
@@ -191,7 +196,8 @@ wok_www_add()
 	# Register...
 	wok_repo_module_add "www" "$domain"
 	wok_repo_module_index_add "www" "uid" "$uid"
-	wok_repo_module_data_set "www" "$domain" "uid" "$uid"
+	wok_repo_module_data_set "www" "$domain" "uid"    "$uid"
+	wok_repo_module_data_set "www" "$domain" "passwd" "$passwd"
 
 	# Reload PHP and Nginx daemons
 	$php_daemon_command_reload
