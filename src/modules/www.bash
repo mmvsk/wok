@@ -49,7 +49,7 @@ wok_www_add()
 {
 	local domain="$1"
 	local interactive="$2"
-	local passwd="$2"
+	local passwd="$3"
 
 	local uid
 	local uid_index
@@ -176,8 +176,8 @@ wok_www_add()
 	fi
 	ln -s "$www_path" "${home_path}/www"
 	[[ -d "${home_path}/.ssh" ]] && chmod g=,o= "${home_path}/.ssh"
-	echo "$passwd" > "$www_passwd_path"
-	chmod 400 "$www_passwd_path"
+	echo "$passwd" > "$home_passwd_path"
+	chmod 400 "$home_passwd_path"
 	chown -R "${uid}:${user_gid}" "$home_path"
 	umask "$umask_prev"
 
