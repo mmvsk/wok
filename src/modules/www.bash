@@ -59,10 +59,11 @@ wok_www_add()
 	local home_template="$(wok_config_get wok_www home_template)"
 	local home_path_base="$(wok_config_get wok_www home_path_base)"
 	local home_path
+	local home_passwd_file="$(wok_config_get wok_www home_passwd_file)"
+	local home_passwd_path
 	local www_template="$(wok_config_get wok_www www_template)"
 	local www_path_base="$(wok_config_get wok_www www_path_base)"
 	local www_path
-	local www_passwd_file="$(wok_config_get wok_www www_passwd_file)"
 	local nginx_vhost_conf_template="$(wok_config_get wok_www nginx_vhost_conf_template)"
 	local nginx_vhost_conf_dir="$(wok_config_get wok_www nginx_vhost_conf_dir)"
 	local nginx_daemon_command_reload=$(wok_config_get wok_www nginx_daemon_command_reload)
@@ -109,6 +110,7 @@ wok_www_add()
 
 	# Generate paths
 	home_path="${home_path_base}/${uid}"
+	home_passwd_path="${home_path}/${home_passwd_file}"
 	www_path="${www_path_base}/${domain}"
 	nginx_vhost_conf_path="${nginx_vhost_conf_dir}/${domain}.conf"
 	php_fpm_pool_path="${php_fpm_pool_dir}/${uid}.conf"
@@ -162,10 +164,6 @@ wok_www_add()
 		wok_perror "Could not create www directory '${www_path}'."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ -n $passwd ]]; then
-		echo "$passwd" > "${www_path}/${www_passwd_file}"
-		chmod 400 "$www_passwd_file"
-	fi
 	chown -R "${uid}:${user_gid}" "$www_path"
 	umask "$umask_prev"
 
@@ -178,8 +176,8 @@ wok_www_add()
 	fi
 	ln -s "$www_path" "${home_path}/www"
 	[[ -d "${home_path}/.ssh" ]] && chmod g=,o= "${home_path}/.ssh"
-	echo "$passwd" > "${www_path}/.pw"
-	chmod 400 "${www_path}/.pw"
+	echo "$passwd" > "$www_passwd_path"
+	chmod 400 "$www_passwd_path"
 	chown -R "${uid}:${user_gid}" "$home_path"
 	umask "$umask_prev"
 
