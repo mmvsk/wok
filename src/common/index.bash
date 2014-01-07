@@ -51,8 +51,12 @@ index_add()
 {
 	local index_path="$1"
 	local token="$2"
+	local index_dir="$(dirname "$index_path")"
 
 	if [[ ! -f $index_path ]]; then
+		if [[ ! -d $index_dir ]]; then
+			mkdir -p "$index_dir"
+		fi
 		touch "$index_path"
 	fi
 
@@ -80,8 +84,12 @@ index_remove()
 	local index_token
 	local tmp_file
 	local found=false
+	local index_dir="$(dirname "$index_path")"
 
 	if [[ ! -f $index_path ]]; then
+		if [[ ! -d $index_dir ]]; then
+			mkdir -p "$index_dir"
+		fi
 		touch "$index_path"
 	fi
 

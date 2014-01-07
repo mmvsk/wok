@@ -269,9 +269,14 @@ wok_repo_module_index_getPath()
 	local module="$1"
 	local index="$2"
 	local path
+	local dir
 
 	path="${WOK_REPO_PATH}/modules/${module}/index/${index}.index"
+	dir="$(dirname "$path")"
 	if [[ ! -f $path ]]; then
+		if [[ ! -d $dir ]]; then
+			mkdir -p "$dir"
+		fi
 		touch "$path"
 	fi
 	echo "$path"
