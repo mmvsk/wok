@@ -20,7 +20,7 @@
 
 wok_postgres_describe()
 {
-	echo "The postgres module handles the postgres HTTP server configuration"
+	echo "The postgres module handles the PostgreSQL database"
 }
 
 wok_postgres_pdeps()
