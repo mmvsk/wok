@@ -176,6 +176,7 @@ wok_mysql_remove()
 	# Unregister...
 	wok_repo_module_remove "mysql" "$domain"
 	wok_repo_module_index_remove "mysql" "uid" "$uid"
+	wok_repo_module_index_remove "mysql" "db"  "$db"
 	wok_repo_module_data_remove "mysql" "$domain"
 }
 

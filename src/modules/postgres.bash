@@ -132,12 +132,15 @@ wok_postgres_add()
 
 	cp "$pgpass_template" "$pgpass_path"
 	sed -i "s/{uid}/${uid}/g" "$pgpass_path"
+	sed -i "s/{db}/${db}/g" "$pgpass_path"
 	sed -i "s/{passwd}/${passwd}/g" "$pgpass_path"
 	chown "${sys_uid}:${sys_gid}" "$pgpass_path"
 	chmod 600 "$pgpass_path"
 
 	cp "$shellrc_template" "$shellrc_path"
 	sed -i "s/{uid}/${uid}/g" "$shellrc_path"
+	sed -i "s/{db}/${db}/g" "$shellrc_path"
+	sed -i "s/{passwd}/${passwd}/g" "$shellrc_path"
 	chown "${sys_uid}:${sys_gid}" "$shellrc_path"
 	chmod 600 "$shellrc_path"
 
@@ -202,6 +205,7 @@ wok_postgres_remove()
 	# Unregister...
 	wok_repo_module_remove "postgres" "$domain"
 	wok_repo_module_index_remove "postgres" "uid" "$uid"
+	wok_repo_module_index_remove "postgres" "db"  "$db"
 	wok_repo_module_data_remove "postgres" "$domain"
 }
 

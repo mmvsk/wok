@@ -167,6 +167,7 @@ wok_mongodb_remove()
 	# Unregister...
 	wok_repo_module_remove "mongodb" "$domain"
 	wok_repo_module_index_remove "mongodb" "uid" "$uid"
+	wok_repo_module_index_remove "mongodb" "db"  "$db"
 	wok_repo_module_data_remove "mongodb" "$domain"
 }
 
