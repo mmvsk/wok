@@ -86,7 +86,14 @@ wok_mysql_add()
 	fi
 
 	# Verify user and database availability
-	#TODO implement
+	if wok_mysql_query "select if ('${uid}' in (select user from mysql.user), '__exists__', null) as found" | grep -q __exists__; then
+		wok_perror "MySQL user '${uid}' already exists"
+		wok_exit $EXIT_ERR_SYS
+	fi
+	if wok_mysql_query "select if ('${db}' in (select schema_name from information_schema.schemata), '__exists__', 0) as found;" | grep -q __exists__; then
+		wok_perror "MySQL database '${db}' already exists"
+		wok_exit $EXIT_ERR_SYS
+	fi
 
 	# Verify templates existence
 	if [[ ! -e "$shellrc_template" ]]; then
@@ -164,7 +171,14 @@ wok_mysql_remove()
 	uid="$(wok_mysql_getUid "$domain")"
 	db="$(wok_mysql_getDb "$domain")"
 
-	# Implement existence check
+	if ! wok_mysql_query "select if ('${uid}' in (select user from mysql.user), '__exists__', null) as found" | grep -q __exists__; then
+		wok_perror "MySQL user '${uid}' does not exist"
+		wok_exit $EXIT_ERR_SYS
+	fi
+	if ! wok_mysql_query "select if ('${db}' in (select schema_name from information_schema.schemata), '__exists__', 0) as found;" | grep -q __exists__; then
+		wok_perror "MySQL database '${db}' does not exist"
+		wok_exit $EXIT_ERR_SYS
+	fi
 
 	wok_mysql_query "drop database ${db}"
 	wok_mysql_query "drop user ${uid}"
@@ -172,6 +186,8 @@ wok_mysql_remove()
 	wok_mysql_query "drop database if exists \`$db\`"
 	wok_mysql_query "drop user \`$uid\`"
 	wok_mysql_query "flush privileges"
+
+	shellrc_path="$(wok_www_getModuleRcPath "$domain" "mysql")"
 
 	# Unregister...
 	wok_repo_module_remove "mysql" "$domain"

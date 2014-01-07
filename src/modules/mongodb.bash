@@ -85,9 +85,6 @@ wok_mongodb_add()
 		wok_exit $EXIT_ERR_SYS
 	fi
 
-	# Verify user and database availability
-	#TODO implement
-
 	# Verify templates existence
 	if [[ ! -e "$shellrc_template" ]]; then
 		wok_perror "Shell RunCom template '${shellrc_template}' does not exist."
@@ -160,9 +157,9 @@ wok_mongodb_remove()
 	uid="$(wok_mongodb_getUid "$domain")"
 	db="$(wok_mongodb_getDb "$domain")"
 
-	# Implement existence check
-
 	wok_mongodb_query "use ${db}\ndb.dropDatabase();"
+
+	shellrc_path="$(wok_www_getModuleRcPath "$domain" "mongodb")"
 
 	# Unregister...
 	wok_repo_module_remove "mongodb" "$domain"

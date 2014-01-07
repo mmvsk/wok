@@ -92,11 +92,11 @@ wok_postgres_add()
 
 	# Verify user and database availability
 	if wok_postgres_query "select '__exists__' from pg_roles where rolname = '${uid}'" | grep -q __exists__; then
-		wok_perror "Postgres user '${uid}' already exists."
+		wok_perror "Postgres user '${uid}' already exists"
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if wok_postgres_query "select '__exists__' from pg_database where datname = '${db}'" | grep -q __exists__; then
-		wok_perror "Postgres database '${db}' already exists."
+		wok_perror "Postgres database '${db}' already exists"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -200,7 +200,7 @@ wok_postgres_remove()
 	wok_postgres_query "drop database ${db}"
 	wok_postgres_query "drop user ${uid}"
 
-	#TODO also remove .pgpass and so on...
+	shellrc_path="$(wok_www_getModuleRcPath "$domain" "postgres")"
 
 	# Unregister...
 	wok_repo_module_remove "postgres" "$domain"
