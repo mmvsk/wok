@@ -35,7 +35,7 @@ wok_postgres_pusage()
 	echo "Commands:"
 	echo
 	echo "    list        List domain handled by this module"
-	echo "    add         Add a domain to this module"
+	echo "    add         Add a domain to this module (and create a user and a database)"
 	echo
 	echo "        Usage: ~ [--interactive|-i] [--password=<password>|-p<password>]"
 	echo "                 <domain>"
@@ -50,19 +50,21 @@ wok_postgres_add()
 {
 	local domain="$1"
 	local interactive="$2"
-	local password="$3"
+	local passwd="$3"
 
 	local uid
 	local uid_index
-	local user_gid="$(wok_config_get wok_postgres user_gid)"
-	local user_shell="$(wok_config_get wok_postgres user_shell)"
-	local home_path_base="$(wok_config_get wok_postgres home_path_base)"
-	local postgres_path_base="$(wok_config_get wok_postgres postgres_path_base)"
-	local home_template="$(wok_config_get wok_postgres home_template_path)"
-	local postgres_template="$(wok_config_get wok_postgres postgres_template_path)"
-	local home_path
-	local postgres_path
-	local umask_prev
+	local db
+	local db_index
+	local master_user="$(wok_config_get wok_postgres master_user)"
+	local pgpass_template="$(wok_config_get wok_postgres pgpass_template)"
+	local pgpass_file="$(wok_config_get wok_postgres pgpass_file)"
+	local pgpass_path
+	local shellrc_template="$(wok_config_get wok_postgres shellrc_template)"
+	local shellrc_path
+	local sys_uid="$(wok_www_getUid "$domain")"
+	local sys_gid="$(wok_www_getGid "$domain")"
+	local home_path="$(wok_www_getHomePath "$domain")"
 
 	if ! wok_repo_has "$domain"; then
 		wok_perror "Domain '${domain}' is not managed by Wok."
@@ -74,79 +76,86 @@ wok_postgres_add()
 		wok_exit $EXIT_ERR_USR
 	fi
 
-	# Generate system UID
+	# Generate the username
 	uid_index="$(wok_repo_module_index_getPath postgres uid)"
-	if ! uid="$(str_slugify "$domain" 32 "postgres-" "$uid_index")"; then
-		wok_perror "Could not create a slug for '${domain}'"
+	if ! uid="$(str_slugify "$domain" 32 "www_" "$uid_index")"; then
+		wok_perror "Could not create a slug for the postgres user for '${domain}'"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
-	# Verify base paths
-	if [[ ! -d "$home_path_base" || ! -w "$home_path_base" ]]; then
-		wok_perror "Home base directory '${home_path_base}' does not exist or is not writable."
-		wok_exit $EXIT_ERR_SYS
-	fi
-	if [[ ! -d "$postgres_path_base" || ! -w "$postgres_path_base" ]]; then
-		wok_perror "WWW base directory '${postgres_path_base}' does not exist or is not writable."
+	# Generate the dbname
+	db_index="$(wok_repo_module_index_getPath postgres db)"
+	if ! db="$(str_slugify "$domain" 63 "www_" "$db_index")"; then
+		wok_perror "Could not create a slug for the postgres db for '${domain}'"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
-	# Generate paths
-	home_path="${home_path_base}/${uid}"
-	postgres_path="${postgres_path_base}/${domain}"
-
-	# Verify paths availability
-	if [[ -e "$home_path" ]]; then
-		wok_perror "Home directory '${home_path}' already exists."
+	# Verify user and database availability
+	if wok_postgres_query "select '__exists__' from pg_roles where rolname = '${uid}'" | grep -q __exists__; then
+		wok_perror "Postgres user '${uid}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ -e "$postgres_path" ]]; then
-		wok_perror "WWW directory '${postgres_path}' already exists."
+	if wok_postgres_query "select '__exists__' from pg_database where datname = '${db}'" | grep -q __exists__; then
+		wok_perror "Postgres database '${db}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	# Verify templates existence
-	if [[ ! -e "$home_template" ]]; then
-		wok_perror "Home template '${home_template}' does not exist."
+	if [[ ! -e "$pgpass_template" ]]; then
+		wok_perror "PgPass template '${pgpass_template}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
-	if [[ ! -e "$postgres_template" ]]; then
-		wok_perror "WWW template '${postgres_template}' does not exist."
-		wok_exit $EXIT_ERR_SYS
-	fi
-
-	# Create system user
-	if ! useradd -g "$user_gid" -d "$home_path" -s "$user_shell" "$uid"; then
-		wok_perror "Could not create system user '${uid}'."
+	if [[ ! -e "$shellrc_template" ]]; then
+		wok_perror "Shell RunCom template '${shellrc_template}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
-	# Create postgres direcotry
-	umask_prev="$(umask)"
-	umask "$(wok_config_get wok_postgres postgres_umask)"
-	if ! cp -r "$postgres_template" "$postgres_path"; then
-		wok_perror "Could not create postgres directory '${postgres_path}'."
-		wok_exit $EXIT_ERR_SYS
+	# If the password is not provided, first try to get the one from www, then ask it
+	if [[ -z $passwd ]]; then
+		passwd="$(wok_www_getPassword "$domain")"
+		if [[ -z $passwd ]]; then
+			if ! $interactive; then
+				wok_perror "No password available and not in interactive mode"
+				wok_exit $EXIT_ERR_USR
+			fi
+			ui_getPasswd passwd "$WOK_PASSWD_PATTERN"
+		fi
 	fi
-	chown -R "${uid}:${user_gid}" "$postgres_path"
-	umask "$umask_prev"
 
-	# Create home directory
-	umask_prev="$(umask)"
-	umask "$(wok_config_get wok_postgres home_umask)"
-	if ! cp -r "$home_template" "$home_path"; then
-		wok_perror "Could not create home directory '${home_path}'."
-		wok_exit $EXIT_ERR_SYS
-	fi
-	ln -s "$postgres_path" "${home_path}/postgres"
-	chmod -R 700 "${home_path}/.ssh"
-	chown -R "${uid}:${user_gid}" "$home_path"
-	umask "$umask_prev"
+	# Create user and database
+	wok_postgres_query "create user ${uid} with encrypted password '${passwd}'"
+	wok_postgres_query "create database ${db} owner ${uid}"
+
+	# Add home files
+	pgpass_path="${home_path}/${pgpass_file}"
+	shellrc_path="$(wok_www_getModuleRcPath "$domain" "postgres")"
+
+	cp "$pgpass_template" "$pgpass_path"
+	sed -i "s/{uid}/${uid}/g" "$pgpass_path"
+	sed -i "s/{passwd}/${passwd}/g" "$pgpass_path"
+	chown "${sys_uid}:${sys_gid}" "$pgpass_path"
+	chmod 600 "$pgpass_path"
+
+	cp "$shellrc_template" "$shellrc_path"
+	sed -i "s/{uid}/${uid}/g" "$shellrc_path"
+	chown "${sys_uid}:${sys_gid}" "$shellrc_path"
+	chmod 600 "$shellrc_path"
 
 	# Register...
 	wok_repo_module_add "postgres" "$domain"
 	wok_repo_module_index_add "postgres" "uid" "$uid"
+	wok_repo_module_index_add "postgres" "db"  "$db"
 	wok_repo_module_data_set "postgres" "$domain" "uid" "$uid"
+	wok_repo_module_data_set "postgres" "$domain" "db"  "$db"
+}
+
+wok_postgres_query()
+{
+	local query="$1"
+	local master_user="$(wok_config_get wok_postgres master_user)"
+	local ret
+
+	echo "$query" | sudo -u "$master_user" psql
 }
 
 wok_postgres_has()
@@ -166,41 +175,29 @@ wok_postgres_remove()
 	local domain="$1"
 
 	local uid
-	local home_path
-	local postgres_path
+	local db
 
 	if ! wok_postgres_has "$domain"; then
 		wok_perror "Domain '${domain}' is not bound to 'postgres' module."
 		wok_exit $EXIT_ERR_USR
 	fi
 
-	uid="$(wok_postgres_puid "$domain")"
-	home_path="$(wok_config_get wok_postgres home_path_base)/${uid}"
-	postgres_path="$(wok_config_get wok_postgres postgres_path_base)/${domain}"
+	uid="$(wok_postgres_getUid "$domain")"
+	db="$(wok_postgres_getDb "$domain")"
 
-	if ! egrep -q "^${uid}:" /etc/passwd; then
-		wok_perror "System user '${uid}' does not exist on this host."
+	if ! wok_postgres_query "select '__exists__' from pg_roles where rolname = '${uid}'" | grep -q __exists__; then
+		wok_perror "Postgres user '${uid}' doest not exist"
+		wok_exit $EXIT_ERR_SYS
+	fi
+	if ! wok_postgres_query "select '__exists__' from pg_database where datname = '${db}'" | grep -q __exists__; then
+		wok_perror "Postgres database '${db}' does not exist"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
-	if [[ ! -d $home_path ]]; then
-		wok_perror "Home directory '${home_path}' does not exist."
-		wok_exit $EXIT_ERR_SYS
-	fi
-	if [[ ! -d $postgres_path ]]; then
-		wok_perror "WWW directory '${postgres_path}' does not exist."
-		wok_exit $EXIT_ERR_SYS
-	fi
+	wok_postgres_query "drop database ${db}"
+	wok_postgres_query "drop user ${uid}"
 
-	if ! $WOK_WWW_USERDEL_CMD "$uid"; then
-		wok_perror "Error deleting system user '${uid}'"
-		wok_exit $EXIT_ERR_SYS
-	fi
-
-	if [[ -d $home_path ]]; then
-		rm -rf "$home_path"
-	fi
-	rm -rf "$postgres_path"
+	#TODO also remove .pgpass and so on...
 
 	# Unregister...
 	wok_repo_module_remove "postgres" "$domain"
@@ -208,7 +205,7 @@ wok_postgres_remove()
 	wok_repo_module_data_remove "postgres" "$domain"
 }
 
-wok_postgres_puid()
+wok_postgres_getUid()
 {
 	local domain="$1"
 
@@ -218,6 +215,18 @@ wok_postgres_puid()
 	fi
 
 	wok_repo_module_data_get "postgres" "$domain" "uid"
+}
+
+wok_postgres_getDb()
+{
+	local domain="$1"
+
+	if ! wok_postgres_has "$domain"; then
+		wok_perror "Domain ${domain} is not managed by 'postgres' module."
+		wok_exit $WOK_ERR_SYS
+	fi
+
+	wok_repo_module_data_get "postgres" "$domain" "db"
 }
 
 wok_postgres_handle()
@@ -296,7 +305,7 @@ wok_postgres_handle()
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
 
-			cmd=(wok_postgres_add "$domain" "$interactive" "$password")
+			cmd=(wok_postgres_add "$domain" "$interactive" "$passwd")
 			if ! ui_showProgress "Binding domain '${domain}' to 'postgres' module" "${cmd[@]}"; then
 				return 1
 			fi

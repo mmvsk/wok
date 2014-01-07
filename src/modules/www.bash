@@ -56,10 +56,6 @@ wok_www_pusage()
 	echo
 	echo "        Usage: ~ <domain>"
 	echo
-	echo "    edit-passwd Edit the password using vim"
-	echo
-	echo "        Usage: ~ <domain>"
-	echo
 }
 
 wok_www_add()
@@ -311,6 +307,18 @@ wok_www_getUid()
 	wok_repo_module_data_get "www" "$domain" "uid"
 }
 
+wok_www_getGid()
+{
+	local domain="$1"
+
+	if ! wok_www_has "$domain"; then
+		wok_perror "Domain ${domain} is not managed by 'www' module."
+		wok_exit $WOK_ERR_SYS
+	fi
+
+	wok_config_get wok_www user_gid
+}
+
 wok_www_getWwwPath()
 {
 	local domain="$1"
@@ -321,6 +329,59 @@ wok_www_getWwwPath()
 	fi
 
 	echo "$(wok_config_get wok_www www_path_base)/${domain}"
+}
+
+wok_www_getHomePath()
+{
+	local domain="$1"
+
+	if ! wok_www_has "$domain"; then
+		wok_perror "Domain ${domain} is not managed by 'www' module."
+		wok_exit $WOK_ERR_SYS
+	fi
+
+	echo "$(wok_config_get wok_www home_path_base)/$(wok_www_getUid "$domain")"
+}
+
+wok_www_getModuleRcPath()
+{
+	local domain="$1"
+	local module="$2" # Facultative
+
+	if ! wok_www_has "$domain"; then
+		wok_perror "Domain ${domain} is not managed by 'www' module."
+		wok_exit $WOK_ERR_SYS
+	fi
+
+	local home_path="$(wok_www_getHomePath "$domain")"
+	local home_modules_rc_dir="$(wok_config_get wok_www home_modules_rc_dir)"
+	local home_modules_rc_path="${home_path}/${home_modules_rc_dir}"
+
+	if [[ -z $module ]]; then
+		echo "$home_modules_rc_path"
+	else
+		echo "${home_modules_rc_path}/${module}.rc"
+	fi
+}
+
+wok_www_getPassword()
+{
+	local domain="$1"
+
+	if ! wok_www_has "$domain"; then
+		wok_perror "Domain ${domain} is not managed by 'www' module."
+		wok_exit $WOK_ERR_SYS
+	fi
+
+	local home_path="$(wok_www_getHomePath "$domain")"
+	local home_passwd_file="$(wok_config_get wok_www home_passwd_file)"
+	local home_passwd_path="${home_path}/${home_passwd_file}"
+
+	if [[ ! -f $home_passwd_path ]]; then
+		return 1
+	fi
+
+	cat "$home_passwd_path"
 }
 
 #
