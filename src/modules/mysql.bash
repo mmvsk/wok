@@ -56,6 +56,10 @@ wok_mysql_add()
 	local uid_index
 	local db
 	local db_index
+	local shellrc_template="$(wok_config_get wok_mysql shellrc_template)"
+	local shellrc_path
+	local sys_uid="$(wok_www_getUid "$domain")"
+	local sys_gid="$(wok_www_getGid "$domain")"
 
 	if ! wok_repo_has "$domain"; then
 		wok_perror "Domain '${domain}' is not managed by Wok."
@@ -84,6 +88,12 @@ wok_mysql_add()
 	# Verify user and database availability
 	#TODO implement
 
+	# Verify templates existence
+	if [[ ! -e "$shellrc_template" ]]; then
+		wok_perror "Shell RunCom template '${shellrc_template}' does not exist."
+		wok_exit $EXIT_ERR_SYS
+	fi
+
 	# If the password is not provided, first try to get the one from www, then ask it
 	if [[ -z $passwd ]]; then
 		passwd="$(wok_www_getPassword "$domain")"
@@ -101,6 +111,15 @@ wok_mysql_add()
 	wok_mysql_query "create database \`$db\` default character set 'utf8' default collate 'utf8_general_ci'"
 	wok_mysql_query "grant all privileges on \`$db\`.* to \`$uid\`@'%' identified by '$passwd'"
 	wok_mysql_query "flush privileges"
+
+	# Add home files
+	shellrc_path="$(wok_www_getModuleRcPath "$domain" "mysql")"
+	cp "$shellrc_template" "$shellrc_path"
+	sed -i "s/{uid}/${uid}/g" "$shellrc_path"
+	sed -i "s/{passwd}/${passwd}/g" "$shellrc_path"
+	sed -i "s/{db}/${db}/g" "$shellrc_path"
+	chown "${sys_uid}:${sys_gid}" "$shellrc_path"
+	chmod 600 "$shellrc_path"
 
 	# Register...
 	wok_repo_module_add "mysql" "$domain"
