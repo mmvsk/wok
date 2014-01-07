@@ -56,6 +56,10 @@ wok_www_pusage()
 	echo
 	echo "        Usage: ~ <domain>"
 	echo
+	echo "    su          Log-in as the specififed user"
+	echo
+	echo "        Usage: ~ <domain>"
+	echo
 }
 
 wok_www_add()
@@ -620,6 +624,21 @@ wok_www_handle()
 
 			vim "${php_fpm_pool_dir}/${uid}.conf" -c "setf dosini"
 			ui_showProgress "Reloading PHP" $php_daemon_command_reload;;
+
+		su)
+			if [[ ${#args_remain[@]} -ne 1 ]]; then
+				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_exit $EXIT_ERR_USR
+			fi
+			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
+
+			if ! wok_www_has "$domain"; then
+				wok_perror "Domain '${domain}' is not bound to 'www' module."
+				wok_exit $EXIT_ERR_USR
+			fi
+
+			local uid="$(wok_www_getUid "$domain")"
+			su - "$uid";;
 
 		*)
 			wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
