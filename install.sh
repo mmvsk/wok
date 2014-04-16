@@ -3,10 +3,10 @@
 base="`dirname "$0"`"
 action=install
 req_root=true
-wok_path=
-sbin_path=
-conf_path=
-repo_path=
+wok_path=/usr/local/share/wok
+sbin_path=/usr/local/sbin/wok
+conf_path=/usr/local/etc/wok
+repo_path=/var/local/lib/wok
 
 usage()
 {
