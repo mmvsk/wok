@@ -48,11 +48,11 @@ wok_www_pusage()
 	echo
 	echo "        Usage: ~ --interactive|-i [--force|-f] <domain>"
 	echo
-	echo "    edit-nginx  Edit nginx virtual host configuration using vim"
+	echo "    edit-nginx  Edit nginx virtual host configuration using ${EDITOR}"
 	echo
 	echo "        Usage: ~ <domain>"
 	echo
-	echo "    edit-php    Edit PHP FPM pool configuration using vim"
+	echo "    edit-php    Edit PHP FPM pool configuration using ${EDITOR}"
 	echo
 	echo "        Usage: ~ <domain>"
 	echo
@@ -603,7 +603,7 @@ wok_www_handle()
 			local nginx_vhost_conf_dir="$(wok_config_get wok_www nginx_vhost_conf_dir)"
 			local nginx_daemon_command_reload=$(wok_config_get wok_www nginx_daemon_command_reload)
 
-			vim "${nginx_vhost_conf_dir}/${domain}.conf" -c "setf nginx"
+			$EDITOR "${nginx_vhost_conf_dir}/${domain}.conf" -c "setf nginx"
 			ui_showProgress "Reloading nginx" $nginx_daemon_command_reload;;
 
 		edit-php)
@@ -622,7 +622,7 @@ wok_www_handle()
 			local php_fpm_pool_dir="$(wok_config_get wok_www php_fpm_pool_dir)"
 			local php_daemon_command_reload=$(wok_config_get wok_www php_daemon_command_reload)
 
-			vim "${php_fpm_pool_dir}/${uid}.conf" -c "setf dosini"
+			$EDITOR "${php_fpm_pool_dir}/${uid}.conf" -c "setf dosini"
 			ui_showProgress "Reloading PHP" $php_daemon_command_reload;;
 
 		su)
