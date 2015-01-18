@@ -1,6 +1,6 @@
 #
 
-# Copyright © 2013 Max Ruman
+# Copyright © 2013-2015 Max Ruman <rmx@guanako.be>
 #
 # This file is part of Wok.
 #
