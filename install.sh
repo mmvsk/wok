@@ -22,6 +22,10 @@ usage()
 
 install()
 {
+	local wok="${sbin_path}/wok"
+	local wok_elf="${wok_path}/wok.elf"
+	local wok_bash="${wok_path}/wok.bash"
+
 	if $req_root && test `id -u` -ne 0; then
 		echo "Wok must be installed as root." >&2
 		return 1
@@ -36,7 +40,9 @@ install()
 	test ! -d "$repo_path" && cp -r "$base"/dist/repo "$repo_path"
 	chmod -R o=,g= "$conf_path"
 	chmod -R o= "$repo_path"
-	ln -sf "${wok_path}/wok" "$sbin_path"
+	test -f "$wok_elf"
+		&& ln -sf "$wok_elf" "$wok"
+		|| ln -sf "$wok_bash" "$wok"
 	echo "done."
 }
 

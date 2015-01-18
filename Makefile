@@ -84,7 +84,14 @@ endef
 # Commands
 #-----------------------------------------------------------------------
 
-default: wok $(ver_file)
+default: wok.bash $(ver_file)
+
+elf: wok.elf
+
+wok.bash: dist/wok/wok.bash
+	test ! -f dist/wok/wok.elf || $(MAKE) wok.elf
+
+wok.elf: dist/wok/wok.bash dist/wok/wok.elf
 
 test: wok
 	for f in $(wildcard test/unit/*); do \
@@ -145,26 +152,19 @@ hostconfig:
 		|| (echo "Wok is not installed on this system" >&2; exit 1)
 	$${EDITOR:-vi} /usr/local/etc/wok/config
 
-.PHONY: default test clean install uninstall reinstall purge hostconfig
-
-#-----------------------------------------------------------------------
-# Targets
-#-----------------------------------------------------------------------
-
-wok: \
-dist/wok \
-dist/repo \
-dist/conf \
-dist/wok/wok \
-dist/conf/wok.ini \
-dist/wok/util \
-dist/wok/util/str_match \
-dist/wok/util/str_slugify \
-dist/wok/util/ini_get \
-dist/wok/util/json_set \
-dist/wok/util/json_get
-
-.PHONY: wok
+.PHONY: \
+default \
+wok.bash \
+wok.elf \
+elf \
+test \
+check \
+clean \
+install \
+uninstall \
+reinstall \
+purge \
+hostconfig
 
 #-----------------------------------------------------------------------
 # Rules
@@ -189,6 +189,13 @@ dist/repo:
 			mkdir -p dist/repo/modules/$$module/data;      \
 			touch dist/repo/modules/$$module/domain.index; \
 		done                                             \
+	, true)
+
+dist/wok/wok.elf: dist/wok/wok.bash
+	$(call task, "Compiling dist/wok/wok.elf", \
+		shc -r -T -f dist/wok/wok.bash;          \
+		mv dist/wok/wok.bash.x dist/wok/wok.elf; \
+		rm -f dist/wok/wok.bash.x.c || true;     \
 	, true)
 
 dist/wok/util/str_match: src/util/str_match.php
@@ -222,10 +229,23 @@ dist/conf/wok.ini: src/wok.ini $(modules_ini)
 		$(foreach path,$(modules_ini),(echo; cat $(path)) >>"$@";) \
 	, true)
 
-dist/wok/wok: src/*.bash $(common_src) $(modules_src)
+# Do not add dist/wok, because dist/wok/util already use it
+dist/wok/wok.bash: \
+dist/repo \
+dist/conf \
+dist/conf/wok.ini \
+dist/wok/util \
+dist/wok/util/str_match \
+dist/wok/util/str_slugify \
+dist/wok/util/ini_get \
+dist/wok/util/json_set \
+dist/wok/util/json_get \
+$(common_src) \
+$(modules_src) \
+src/*.bash
 	$(call task, "Building $@",                                                                \
 		(echo "#!/bin/bash"; cat src/wok.bash) >"$@" && chmod +x "$@";                           \
-		sed -i 's:{{wok_version}}:"$(wok_version)":g' "$@";                                      \
+		sed -i 's:{{wok_version}}:"$(ver)":g' "$@";                                      \
 		sed -i 's/{{wok_module_list}}/$(foreach module,$(modules),"$(module)")/g' "$@";          \
 		sed -i 's:{{wok_config_file}}:"$(conf_path)/wok.ini":g' "$@";                            \
 		sed -i 's:{{wok_repo_path}}:"$(repo_path)":g' "$@";                                      \
