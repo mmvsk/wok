@@ -432,16 +432,16 @@ wok_www_createSsl()
 		fi
 	fi
 
-	# Create the private key
+	# Create the private key; note: adding -aes256 will encrypt the key and ask for password...
 	openssl genrsa -out "$nginx_ssl_key_path" "$nginx_ssl_key_size"
 	chmod 600 "$nginx_ssl_key_path"
 
 	# Create the certificate signing request
-	openssl req -new -key "$nginx_ssl_key_path" -out "$nginx_ssl_csr_path"
+	openssl req -new -sha512 -key "$nginx_ssl_key_path" -out "$nginx_ssl_csr_path"
 	chmod 600 "$nginx_ssl_csr_path"
 
 	# Create a temporary self-signed certificate
-	openssl x509 -req -in "$nginx_ssl_csr_path" -signkey "$nginx_ssl_key_path" -out "$nginx_ssl_cer_path"
+	openssl x509 -req -sha512 -days 3650 -in "$nginx_ssl_csr_path" -signkey "$nginx_ssl_key_path" -out "$nginx_ssl_cer_path"
 	chmod 600 "$nginx_ssl_cer_path"
 
 	echo "Certificate created successfully!"
