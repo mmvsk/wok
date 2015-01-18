@@ -35,48 +35,78 @@ sbin_path = /usr/local/sbin/wok
 conf_path = /usr/local/etc/wok
 repo_path = /var/local/lib/wok
 
-wok_version = $(shell cat "Version")
-
 # No questions :)
 shitify = 1
 
-# Don't change!
-SHELL = sh
+# Make options (don't touch!)
+SHELL = /bin/bash
+.SILENT:
 
 modules     = $(basename $(notdir $(wildcard src/modules/*.bash)))
 modules_src = $(wildcard src/modules/*.bash)
 modules_ini = $(wildcard src/modules/*.ini)
 common_src  = $(wildcard src/common/*.bash)
 
+# Version file generator
+ver_file = Version
+ver = $(shell                                                  \
+	test -d .git || (echo "null"; exit 1) || exit 2>/dev/null;   \
+	git describe --always | perl -pe "s/^v//" | (                \
+		[[ "$(env)" == "debug" ]]                                  \
+			&& perl -pe "s/^(\d+\.\d+\.\d+)$$|(-\d+-)/\$$1-dev\$$2/" \
+			|| cat                                                   \
+	)                                                            \
+)
+
+#
+# Call a build unit
+#
+# Characters: … ✓✔ ✗✘
+#
+# @param string  The name of the build
+# @param command The command to execute
+# @param command The command to execute in case of failure
+#
+define task
+	op="$$(echo $1 | sed -e 's/^ *//' -e 's/ *$$//')";  \
+	echo -n "… $$op";                                   \
+		r=$$(( $2 ) 3>&1 1>&2 2>&3)                       \
+			&& echo -e "\r\e[1;32m✔\e[0m $$op"              \
+			|| ($3;                                         \
+				echo -e "\r\e[1;31m✘\e[0m $$op\n";            \
+				echo "$$r" | sed "s:^:\x1b[0;31m  >\x1b[0m :g"; \
+				echo;                                         \
+				exit 1                                        \
+			)
+endef
+
 #-----------------------------------------------------------------------
 # Commands
 #-----------------------------------------------------------------------
 
-default: wok
-
-v:
-	@echo "<$(wok_version)>"
-
-check:
-	@echo list: $(modules)
-	@echo src:  $(modules_src)
+default: wok $(ver_file)
 
 test: wok
-	@for f in $(wildcard test/unit/*); do \
-		name=`basename "$$f"`; \
+	for f in $(wildcard test/unit/*); do \
+		name=$$(basename "$$f"); \
 		echo "*** $${name}"; \
 		"$$f" || exit 1; \
 		echo; \
 	done
-	@echo "All tests passed successfully!"
+	echo -e "\e[1;32m✔\e[0m All tests passed successfully!"
+
+check:
+	echo list: $(modules)
+	echo src:  $(modules_src)
 
 clean:
-	@echo -n "Cleaning..."
-	@-rm -rf dist/*
-	@echo "done."
+	$(call task, "Cleaning previous build", \
+		rm -rf dist/* || true;                \
+		rm -f $(ver_file) || true             \
+	, true)
 
 install: wok
-	@./install.sh \
+	./install.sh \
 		--install \
 		--wok-path="$(wok_path)" \
 		--sbin-path="$(sbin_path)" \
@@ -84,7 +114,7 @@ install: wok
 		--repo-path="$(repo_path)"
 
 uninstall:
-	@./install.sh \
+	./install.sh \
 		--uninstall \
 		--wok-path="$(wok_path)" \
 		--sbin-path="$(sbin_path)" \
@@ -92,7 +122,7 @@ uninstall:
 		--repo-path="$(repo_path)"
 
 reinstall: wok
-	@./install.sh \
+	./install.sh \
 		--reinstall \
 		--wok-path="$(wok_path)" \
 		--sbin-path="$(sbin_path)" \
@@ -100,7 +130,7 @@ reinstall: wok
 		--repo-path="$(repo_path)"
 
 purge:
-	@./install.sh \
+	./install.sh \
 		--purge \
 		--wok-path="$(wok_path)" \
 		--sbin-path="$(sbin_path)" \
@@ -108,12 +138,12 @@ purge:
 		--repo-path="$(repo_path)"
 
 hostconfig:
-	@test -d /usr/local/share/wok \
+	test -d /usr/local/share/wok \
 		|| test -d /usr/local/etc/wok \
 		|| test -d /var/local/lib/wok \
 		|| test -f /usr/local/sbin/wok \
 		|| (echo "Wok is not installed on this system" >&2; exit 1)
-	@$${EDITOR:-vi} /usr/local/etc/wok/config
+	$${EDITOR:-vi} /usr/local/etc/wok/config
 
 .PHONY: default test clean install uninstall reinstall purge hostconfig
 
@@ -147,71 +177,77 @@ dist/wok/util/json_get
 # $?: more recent deps
 
 dist/wok dist/wok/util dist/conf dist/modules:
-	@echo -n "Creating directory $@..."
-	@mkdir -p "$@"
-	@echo "done."
+	$(call task, "Creating directory $@", mkdir -p "$@", true)
 
 dist/repo:
-	@echo -n "Creating empty repository..."
-	@mkdir -p "$@"
-	@mkdir "$@/modules"
-	@touch "$@/domain.index"
-	@for module in $(modules); do \
-		mkdir -p dist/repo/modules/$$module/index; \
-		mkdir -p dist/repo/modules/$$module/data; \
-		touch dist/repo/modules/$$module/domain.index; \
-	done
-	@echo "done."
+	$(call task, "Creating empty repository",          \
+		mkdir -p "$@";                                   \
+		mkdir "$@/modules";                              \
+		touch "$@/domain.index";                         \
+		for module in $(modules); do                     \
+			mkdir -p dist/repo/modules/$$module/index;     \
+			mkdir -p dist/repo/modules/$$module/data;      \
+			touch dist/repo/modules/$$module/domain.index; \
+		done                                             \
+	, true)
 
 dist/wok/util/str_match: src/util/str_match.php
-	@echo -n "Building $@..."
-	@(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
-	@echo "done."
+	$(call task, "Building $@",                                \
+		(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@" \
+	, true)
 
 dist/wok/util/str_slugify: src/util/str_slugify.php
-	@echo -n "Building $@..."
-	@(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
-	@echo "done."
+	$(call task, "Building $@",                                \
+		(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@" \
+	, true)
 
 dist/wok/util/ini_get: src/util/ini_get.php
-	@echo -n "Building $@..."
-	@(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
-	@echo "done."
+	$(call task, "Building $@",                                \
+		(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@" \
+	, true)
 
 dist/wok/util/json_get: src/util/json_get.php
-	@echo -n "Building $@..."
-	@(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
-	@echo "done."
+	$(call task, "Building $@",                                \
+		(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@" \
+	, true)
 
 dist/wok/util/json_set: src/util/json_set.php
-	@echo -n "Building $@..."
-	@(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@"
-	@echo "done."
+	$(call task, "Building $@",                                \
+		(echo "#!/usr/bin/php"; cat "$<") >"$@" && chmod +x "$@" \
+	, true)
 
 dist/conf/wok.ini: src/wok.ini $(modules_ini)
-	@echo -n "Assembling $@..."
-	@cp src/wok.ini "$@"
-	@$(foreach path,$(modules_ini),(echo; cat $(path)) >>"$@";)
-	@echo "done."
+	$(call task, "Assembling $@",                                \
+		cp src/wok.ini "$@";                                       \
+		$(foreach path,$(modules_ini),(echo; cat $(path)) >>"$@";) \
+	, true)
 
-dist/wok/wok: src/*.bash $(common_src) $(modules_src) Version
-	@echo -n "Building $@..."
-	@(echo "#!/bin/bash"; cat src/wok.bash) >"$@" && chmod +x "$@"
-	@sed -i 's:{{wok_version}}:"$(wok_version)":g' "$@"
-	@sed -i 's/{{wok_module_list}}/$(foreach module,$(modules),"$(module)")/g' "$@"
-	@sed -i 's:{{wok_config_file}}:"$(conf_path)/wok.ini":g' "$@"
-	@sed -i 's:{{wok_repo_path}}:"$(repo_path)":g' "$@"
-	@sed -i 's:{{wok_util_path}}:"$(wok_path)/util":g' "$@"
-	@sed -i "/{{modules_src}}/{`printf '$(foreach path,$(modules_src),r $(path)\n)d'`}" "$@"
-	@sed -i "/{{common_src}}/{`printf '$(foreach path,$(common_src),r $(path)\n)d'`}" "$@"
-	@sed -i "/{{wok_module_src}}/{`printf 'r src/wok_module.bash\nd'`}" "$@"
-	@sed -i "/{{wok_config_src}}/{`printf 'r src/wok_config.bash\nd'`}" "$@"
-	@sed -i "/{{wok_repo_src}}/{`printf 'r src/wok_repo.bash\nd'`}" "$@"
-	@sed -i "/{{wok_domain_src}}/{`printf 'r src/wok_domain.bash\nd'`}" "$@"
-	@sed -i "/{{wok_report_src}}/{`printf 'r src/wok_report.bash\nd'`}" "$@"
-	@sed -i '22,$${/^#/d;}' "$@"
+dist/wok/wok: src/*.bash $(common_src) $(modules_src)
+	$(call task, "Building $@",                                                                \
+		(echo "#!/bin/bash"; cat src/wok.bash) >"$@" && chmod +x "$@";                           \
+		sed -i 's:{{wok_version}}:"$(wok_version)":g' "$@";                                      \
+		sed -i 's/{{wok_module_list}}/$(foreach module,$(modules),"$(module)")/g' "$@";          \
+		sed -i 's:{{wok_config_file}}:"$(conf_path)/wok.ini":g' "$@";                            \
+		sed -i 's:{{wok_repo_path}}:"$(repo_path)":g' "$@";                                      \
+		sed -i 's:{{wok_util_path}}:"$(wok_path)/util":g' "$@";                                  \
+		sed -i "/{{modules_src}}/{`printf '$(foreach path,$(modules_src),r $(path)\n)d'`}" "$@"; \
+		sed -i "/{{common_src}}/{`printf '$(foreach path,$(common_src),r $(path)\n)d'`}" "$@";   \
+		sed -i "/{{wok_module_src}}/{`printf 'r src/wok_module.bash\nd'`}" "$@";                 \
+		sed -i "/{{wok_config_src}}/{`printf 'r src/wok_config.bash\nd'`}" "$@";                 \
+		sed -i "/{{wok_repo_src}}/{`printf 'r src/wok_repo.bash\nd'`}" "$@";                     \
+		sed -i "/{{wok_domain_src}}/{`printf 'r src/wok_domain.bash\nd'`}" "$@";                 \
+		sed -i "/{{wok_report_src}}/{`printf 'r src/wok_report.bash\nd'`}" "$@";                 \
+	, true)
 ifeq ($(shitify), 1)
-	@sed -i '22,$${/^$$/d;}' "$@"
-	@sed -i 's/^\s\+//g' "$@"
+	# Obfuscation process
+	sed -i '22,$${/^#/d;}' "$@"
+	sed -i '22,$${/^$$/d;}' "$@"
+	sed -i 's/^\s\+//g' "$@"
 endif
-	@echo "done."
+
+$(ver_file):
+ifneq ($(shell cat $(ver_file) 2>/dev/null || true), $(ver))
+	$(call task, "$(ver_file): $(ver)", echo "$(ver)" > $@, true)
+endif
+
+.PHONY: $(ver_file)
