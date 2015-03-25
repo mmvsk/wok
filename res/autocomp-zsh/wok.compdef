@@ -1,0 +1,40 @@
+#compdef wok
+
+_wok() {
+	_arguments "1: :->a1" "2: :->a2" "3: :->a3"
+	case $state in
+		a1)
+			_arguments "1:a1:(add ls list rm remove help www mysql postgres mongodb)"
+			;;
+		a2)
+			case $words[2] in
+				rm|remove)
+					_files -g "*.conf(:r)" -S " " -W /etc/nginx/vhosts
+					;;
+				help)
+					_arguments "2:a2:(list add remove mysql postgres mongodb www)"
+					;;
+				www)
+					_arguments "2:a2:(su edit-nginx edit-php create-ssl add ls list rm remove)"
+					;;
+			esac
+			;;
+		a3)
+			case $words[2] in
+				www)
+					case $words[3] in
+						create-ssl)
+							#_files -g "*.conf(:r)" -P "-i " -S " " -W /etc/nginx/vhosts
+							_files -g "*.conf(:r)" -S " -i " -W /etc/nginx/vhosts
+							;;
+						su|edit-nginx|edit-php|create-ssl|rm|remove)
+							_files -g "*.conf(:r)" -S " " -W /etc/nginx/vhosts
+							;;
+					esac
+					;;
+			esac
+			;;
+	esac
+}
+
+compdef _wok wok
