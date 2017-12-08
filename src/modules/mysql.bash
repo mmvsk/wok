@@ -146,7 +146,7 @@ wok_mysql_query()
 		root_passwd_param="--password=${root_passwd}"
 	fi
 
-	echo "$query" | mysql -u root "root_passwd_param"
+	echo "$query" | mysql -u root "$root_passwd_param"
 }
 
 wok_mysql_has()
