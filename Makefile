@@ -28,12 +28,12 @@
 # Example: make install wok_path=/usr/share/wok \
 #                       bin_path=/usr/bin/wok \
 #                       conf_path=/etc/wok \
-#                       repo_path=/var/lib/wok
+#                       data_path=/var/lib/wok
 #
-wok_path  = /usr/local/share/wok
-bin_path = /usr/local/bin/wok
-conf_path = /usr/local/etc/wok
-repo_path = /var/local/lib/wok
+install_path  = /usr/local/share
+conf_path = /usr/local/etc
+data_path = /var/local/lib
+bin_path = /usr/local/bin
 
 # No questions :)
 shitify = 1
@@ -93,7 +93,7 @@ wok.bash: dist/wok/wok.bash
 
 wok.elf: dist/wok/wok.bash dist/wok/wok.elf
 
-test: wok
+test: wok.bash
 	for f in $(wildcard test/unit/*); do \
 		name=$$(basename "$$f"); \
 		echo "*** $${name}"; \
@@ -112,37 +112,45 @@ clean:
 		rm -f $(ver_file) || true             \
 	, true)
 
-install: wok
+install: wok.bash
 	./install.sh \
-		--install \
-		--wok-path="$(wok_path)" \
-		--bin-path="$(bin_path)" \
+		install \
+		--install-path="$(install_path)" \
 		--conf-path="$(conf_path)" \
-		--repo-path="$(repo_path)"
+		--data-path="$(data_path)" \
+		--bin-path="$(bin_path)"
+
+reinstall: wok.bash
+	./install.sh \
+		reinstall \
+		--install-path="$(install_path)" \
+		--conf-path="$(conf_path)" \
+		--data-path="$(data_path)" \
+		--bin-path="$(bin_path)"
+
+remove:
+	./install.sh \
+		remove \
+		--install-path="$(install_path)" \
+		--conf-path="$(conf_path)" \
+		--data-path="$(data_path)" \
+		--bin-path="$(bin_path)"
 
 uninstall:
 	./install.sh \
-		--uninstall \
-		--wok-path="$(wok_path)" \
-		--bin-path="$(bin_path)" \
+		remove \
+		--install-path="$(install_path)" \
 		--conf-path="$(conf_path)" \
-		--repo-path="$(repo_path)"
-
-reinstall: wok
-	./install.sh \
-		--reinstall \
-		--wok-path="$(wok_path)" \
-		--bin-path="$(bin_path)" \
-		--conf-path="$(conf_path)" \
-		--repo-path="$(repo_path)"
+		--data-path="$(data_path)" \
+		--bin-path="$(bin_path)"
 
 purge:
 	./install.sh \
-		--purge \
-		--wok-path="$(wok_path)" \
-		--bin-path="$(bin_path)" \
+		purge \
+		--install-path="$(install_path)" \
 		--conf-path="$(conf_path)" \
-		--repo-path="$(repo_path)"
+		--data-path="$(data_path)" \
+		--bin-path="$(bin_path)"
 
 hostconfig:
 	test -d /usr/local/share/wok \
@@ -161,8 +169,9 @@ test \
 check \
 clean \
 install \
-uninstall \
 reinstall \
+remove \
+uninstall \
 purge \
 hostconfig
 
