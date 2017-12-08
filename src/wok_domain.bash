@@ -20,7 +20,7 @@
 
 WOK_DOMAIN_PATTERN='^[[:alnum:]]+([.\-][[:alnum:]]+)*$'
 WOK_PASSWD_PATTERN='^[[:alnum:]]{8,64}$'
-WOK_PASSWD_LENGTH=12
+WOK_PASSWD_LENGTH=16
 WOK_PASSWD_CMD="pwgen -s $WOK_PASSWD_LENGTH 1"
 WOK_LOG_ENABLE=false
 WOK_LOG_PATTERN="^/tmp/"
@@ -177,21 +177,22 @@ wok_add()
 	wok_module_resolveDeps cascade_list
 
 	# Create the password
-	if ! [[ $passwd =~ $WOK_PASSWD_PATTERN ]]; then
-		if $interactive && ! ui_confirm "Generate a global password?"; then
-			ui_getPasswd passwd "$WOK_PASSWD_PATTERN"
-		else
-			passwd="$($WOK_PASSWD_CMD)"
-		fi
-	fi
+	#if ! [[ $passwd =~ $WOK_PASSWD_PATTERN ]]; then
+		#if $interactive && ! ui_confirm "Generate a global password?"; then
+			#ui_getPasswd passwd "$WOK_PASSWD_PATTERN"
+		#else
+			#passwd="$($WOK_PASSWD_CMD)"
+		#fi
+	#fi
+	passwd="$($WOK_PASSWD_CMD)"
 
 	# Determine report recipients
-	if [[ ${#report_to[@]} -lt 1 ]] && $interactive; then
-		if ui_confirm "Send the recipe via e-mail?"; then
-			re='[[:alnum:]._\-]{1,255}@[[:alnum:].\-]{1,255}'
-			ui_getString report_to[0] "${re}(,${re}){0,12}" "E-mail (separate by a comma)"
-		fi
-	fi
+	#if [[ ${#report_to[@]} -lt 1 ]] && $interactive; then
+		#if ui_confirm "Send the recipe via e-mail?"; then
+			#re='[[:alnum:]._\-]{1,255}@[[:alnum:].\-]{1,255}'
+			#ui_getString report_to[0] "${re}(,${re}){0,12}" "E-mail (separate by a comma)"
+		#fi
+	#fi
 
 	# Register the domain in the repo
 	cmd=(wok_repo_add "$domain")
