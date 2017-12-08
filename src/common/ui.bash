@@ -33,8 +33,8 @@ ui_confirm()
 	[[ -z $action ]] && action="Proceed?"
 
 	while true; do
-		read -ep "${action} [y/n]: " user_resp
-		if [[ ${user_resp:0:1} == [yY] ]]; then
+		read -ep "${action} [Y|n]: " user_resp
+		if [[ -z $user_resp ]] || [[ ${user_resp:0:1} == [yY] ]]; then
 			return 0
 		elif [[ ${user_resp:0:1} == [nN] ]]; then
 			return 1
