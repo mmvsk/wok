@@ -25,7 +25,7 @@
 #
 # Used to configure Wok.
 #
-# Example: make install wok_path=/usr/share/wok \
+# Example: make install install_path=/usr/share/wok \
 #                       bin_path=/usr/bin/wok \
 #                       conf_path=/etc/wok \
 #                       data_path=/var/lib/wok
@@ -256,9 +256,9 @@ src/*.bash
 		(echo "#!/bin/bash"; cat src/wok.bash) >"$@" && chmod +x "$@";                           \
 		sed -i 's:{{wok_version}}:"$(ver)":g' "$@";                                      \
 		sed -i 's/{{wok_module_list}}/$(foreach module,$(modules),"$(module)")/g' "$@";          \
-		sed -i 's:{{wok_config_file}}:"$(conf_path)/wok.ini":g' "$@";                            \
-		sed -i 's:{{wok_repo_path}}:"$(repo_path)":g' "$@";                                      \
-		sed -i 's:{{wok_util_path}}:"$(wok_path)/util":g' "$@";                                  \
+		sed -i 's:{{wok_config_file}}:"$(conf_path)/wok/wok.ini":g' "$@";                            \
+		sed -i 's:{{wok_repo_path}}:"$(data_path)/wok":g' "$@";                                      \
+		sed -i 's:{{wok_util_path}}:"$(install_path)/wok/util":g' "$@";                                  \
 		sed -i "/{{modules_src}}/{`printf '$(foreach path,$(modules_src),r $(path)\n)d'`}" "$@"; \
 		sed -i "/{{common_src}}/{`printf '$(foreach path,$(common_src),r $(path)\n)d'`}" "$@";   \
 		sed -i "/{{wok_module_src}}/{`printf 'r src/wok_module.bash\nd'`}" "$@";                 \
