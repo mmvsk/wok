@@ -40,9 +40,7 @@ install()
 	test ! -d "$repo_path" && cp -r "$base"/dist/repo "$repo_path"
 	chmod -R o=,g= "$conf_path"
 	chmod -R o= "$repo_path"
-	test -f "$wok_elf"
-		&& ln -sf "$wok_elf" "$wok"
-		|| ln -sf "$wok_bash" "$wok"
+	test -f "$wok_elf" && ln -sf "$wok_elf" "$wok" || ln -sf "$wok_bash" "$wok"
 	echo "done."
 }
 
