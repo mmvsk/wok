@@ -140,8 +140,13 @@ wok_mysql_query()
 {
 	local query="$1"
 	local root_passwd="$(wok_config_get wok_mysql root_passwd)"
+	local root_passwd_param=""
 
-	echo "$query" | mysql -u root --password="$root_passwd"
+	if [[ -n $root_passwd ]]; then
+		root_passwd_param="--password=${root_passwd}"
+	fi
+
+	echo "$query" | mysql -u root "root_passwd_param"
 }
 
 wok_mysql_has()
