@@ -4,7 +4,7 @@ base="`dirname "$0"`"
 action=install
 req_root=true
 wok_path=/usr/local/share/wok
-sbin_path=/usr/local/sbin/wok
+bin_path=/usr/local/bin/wok
 conf_path=/usr/local/etc/wok
 repo_path=/var/local/lib/wok
 
@@ -14,7 +14,7 @@ usage()
 	echo "                    [--no-root]  <paths...>"
 	echo
 	echo "    --wok-path=<path>  (e.g. /usr/local/share/wok)"
-	echo "    --sbin-path=<path> (e.g. /usr/local/sbin/wok)"
+	echo "    --bin-path=<path> (e.g. /usr/local/bin/wok)"
 	echo "    --conf-path=<path> (e.g. /usr/local/etc/wok)"
 	echo "    --repo-path=<path> (e.g. /var/local/lib/wok)"
 	echo
@@ -22,7 +22,7 @@ usage()
 
 install()
 {
-	local wok="${sbin_path}/wok"
+	local wok="${bin_path}/wok"
 	local wok_elf="${wok_path}/wok.elf"
 	local wok_bash="${wok_path}/wok.bash"
 
@@ -48,13 +48,13 @@ install()
 
 uninstall()
 {
-	if test ! -d "$wok_path" && test ! -f "$sbin_path"; then
+	if test ! -d "$wok_path" && test ! -f "$bin_path"; then
 		echo "Wok is not installed on this system" >&2
 		return 1
 	fi
 	echo -n "Uninstalling..."
 	rm -rf "$wok_path"
-	rm -f "$sbin_path"
+	rm -f "$bin_path"
 	echo "done."
 }
 
@@ -92,7 +92,7 @@ for arg in "$@"; do
 		--purge)       action=purge;;
 		--no-root)     req_root=false;;
 		--wok-path=*)  wok_path="$argval";;
-		--sbin-path=*) sbin_path="$argval";;
+		--bin-path=*) bin_path="$argval";;
 		--conf-path=*) conf_path="$argval";;
 		--repo-path=*) repo_path="$argval";;
 		*) echo "Unknown argument '$arg'" >&2; exit 1;;
@@ -100,7 +100,7 @@ for arg in "$@"; do
 done
 
    test -z "$wok_path" \
-|| test -z "$sbin_path" \
+|| test -z "$bin_path" \
 || test -z "$conf_path" \
 || test -z "$repo_path" \
 && usage >&2 && exit 1

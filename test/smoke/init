@@ -7,7 +7,7 @@ cd "$base"
 
 make clean && make \
 	wok_path="$test"/share \
-	sbin_path="$test"/wok \
+	bin_path="$test"/wok \
 	conf_path="$test"/conf \
 	repo_path="$test"/repo
 
@@ -15,7 +15,7 @@ make clean && make \
 	--purge \
 	--no-root \
 	--wok-path="$test"/share \
-	--sbin-path="$test"/wok \
+	--bin-path="$test"/wok \
 	--conf-path="$test"/conf \
 	--repo-path="$test"/repo
 
@@ -23,7 +23,7 @@ make clean && make \
 	--reinstall \
 	--no-root \
 	--wok-path="$test"/share \
-	--sbin-path="$test"/wok \
+	--bin-path="$test"/wok \
 	--conf-path="$test"/conf \
 	--repo-path="$test"/repo
 

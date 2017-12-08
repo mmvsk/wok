@@ -26,12 +26,12 @@
 # Used to configure Wok.
 #
 # Example: make install wok_path=/usr/share/wok \
-#                       sbin_path=/usr/sbin/wok \
+#                       bin_path=/usr/bin/wok \
 #                       conf_path=/etc/wok \
 #                       repo_path=/var/lib/wok
 #
 wok_path  = /usr/local/share/wok
-sbin_path = /usr/local/sbin/wok
+bin_path = /usr/local/bin/wok
 conf_path = /usr/local/etc/wok
 repo_path = /var/local/lib/wok
 
@@ -116,7 +116,7 @@ install: wok
 	./install.sh \
 		--install \
 		--wok-path="$(wok_path)" \
-		--sbin-path="$(sbin_path)" \
+		--bin-path="$(bin_path)" \
 		--conf-path="$(conf_path)" \
 		--repo-path="$(repo_path)"
 
@@ -124,7 +124,7 @@ uninstall:
 	./install.sh \
 		--uninstall \
 		--wok-path="$(wok_path)" \
-		--sbin-path="$(sbin_path)" \
+		--bin-path="$(bin_path)" \
 		--conf-path="$(conf_path)" \
 		--repo-path="$(repo_path)"
 
@@ -132,7 +132,7 @@ reinstall: wok
 	./install.sh \
 		--reinstall \
 		--wok-path="$(wok_path)" \
-		--sbin-path="$(sbin_path)" \
+		--bin-path="$(bin_path)" \
 		--conf-path="$(conf_path)" \
 		--repo-path="$(repo_path)"
 
@@ -140,7 +140,7 @@ purge:
 	./install.sh \
 		--purge \
 		--wok-path="$(wok_path)" \
-		--sbin-path="$(sbin_path)" \
+		--bin-path="$(bin_path)" \
 		--conf-path="$(conf_path)" \
 		--repo-path="$(repo_path)"
 
@@ -148,7 +148,7 @@ hostconfig:
 	test -d /usr/local/share/wok \
 		|| test -d /usr/local/etc/wok \
 		|| test -d /var/local/lib/wok \
-		|| test -f /usr/local/sbin/wok \
+		|| test -f /usr/local/bin/wok \
 		|| (echo "Wok is not installed on this system" >&2; exit 1)
 	$${EDITOR:-vi} /usr/local/etc/wok/config
 
