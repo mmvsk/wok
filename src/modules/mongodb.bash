@@ -62,32 +62,32 @@ wok_mongodb_add()
 	local sys_gid="$(wok_www_getGid "$domain")"
 
 	if ! wok_repo_has "$domain"; then
-		wok_perror "Domain '${domain}' is not managed by Wok."
+		wok_error "Domain '${domain}' is not managed by Wok."
 		wok_exit $EXIT_ERR_USR
 	fi
 
 	if wok_mongodb_has "$domain"; then
-		wok_perror "Domain '${domain}' is already bound to 'mongodb' module."
+		wok_error "Domain '${domain}' is already bound to 'mongodb' module."
 		wok_exit $EXIT_ERR_USR
 	fi
 
 	# Generate the username
 	uid_index="$(wok_repo_module_index_getPath mongodb uid)"
 	if ! uid="$(str_slugify "$domain" 32 "www_" "$uid_index")"; then
-		wok_perror "Could not create a slug for the mongodb user for '${domain}'"
+		wok_error "Could not create a slug for the mongodb user for '${domain}'"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	# Generate the dbname
 	db_index="$(wok_repo_module_index_getPath mongodb db)"
 	if ! db="$(str_slugify "$domain" 64 "www_" "$db_index")"; then
-		wok_perror "Could not create a slug for the mongodb db for '${domain}'"
+		wok_error "Could not create a slug for the mongodb db for '${domain}'"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	# Verify templates existence
 	if [[ ! -e "$shellrc_template" ]]; then
-		wok_perror "Shell RunCom template '${shellrc_template}' does not exist."
+		wok_error "Shell RunCom template '${shellrc_template}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -96,7 +96,7 @@ wok_mongodb_add()
 		passwd="$(wok_www_getPassword "$domain")"
 		if [[ -z $passwd ]]; then
 			if ! $interactive; then
-				wok_perror "No password available and not in interactive mode"
+				wok_error "No password available and not in interactive mode"
 				wok_exit $EXIT_ERR_USR
 			fi
 			ui_getPasswd passwd "$WOK_PASSWD_PATTERN"
@@ -150,7 +150,7 @@ wok_mongodb_remove()
 	local db
 
 	if ! wok_mongodb_has "$domain"; then
-		wok_perror "Domain '${domain}' is not bound to 'mongodb' module."
+		wok_error "Domain '${domain}' is not bound to 'mongodb' module."
 		wok_exit $EXIT_ERR_USR
 	fi
 
@@ -173,7 +173,7 @@ wok_mongodb_getUid()
 	local domain="$1"
 
 	if ! wok_mongodb_has "$domain"; then
-		wok_perror "Domain ${domain} is not managed by 'mongodb' module."
+		wok_error "Domain ${domain} is not managed by 'mongodb' module."
 		wok_exit $WOK_ERR_SYS
 	fi
 
@@ -185,7 +185,7 @@ wok_mongodb_getDb()
 	local domain="$1"
 
 	if ! wok_mongodb_has "$domain"; then
-		wok_perror "Domain ${domain} is not managed by 'mongodb' module."
+		wok_error "Domain ${domain} is not managed by 'mongodb' module."
 		wok_exit $WOK_ERR_SYS
 	fi
 
@@ -220,7 +220,7 @@ wok_mongodb_handle()
 
 			-p*|--password=*)
 				if ! passwd="$(arg_parseValue "$arg")"; then
-					wok_perror "Invalid usage."
+					wok_error "Invalid usage."
 					wok_exit $EXIT_ERR_USR
 				fi;;
 
@@ -229,15 +229,15 @@ wok_mongodb_handle()
 
 			--report-log=*)
 				if ! arg_value="$(arg_parseValue "$arg")"; then
-					wok_perror "Invalid usage."
+					wok_error "Invalid usage."
 					wok_exit $EXIT_ERR_USR
 				fi
 				if ! [[ $arg_value =~ $WOK_LOG_PATTERN ]]; then
-					wok_perror "The log file must be located in a temp directory."
+					wok_error "The log file must be located in a temp directory."
 					wok_exit $EXIT_ERR_USR
 				fi
 				if [[ ! -f $arg_value ]]; then
-					wok_perror "The log file must already be created."
+					wok_error "The log file must already be created."
 					wok_exit $EXIT_ERR_USR
 				fi
 				report_log="$arg_value";;
@@ -252,7 +252,7 @@ wok_mongodb_handle()
 
 	# At least one argument is required: the action to perform
 	if [[ ${#args_remain[@]} -lt 1 ]]; then
-		wok_perror "Invalid usage. See '${WOK_COMMAND} mongodb --help'."
+		wok_error "Invalid usage. See '${WOK_COMMAND} mongodb --help'."
 		wok_exit $EXIT_ERR_USR
 	fi
 
@@ -263,7 +263,7 @@ wok_mongodb_handle()
 
 		add)
 			if [[ ${#args_remain[@]} -ne 1 ]]; then
-				wok_perror "Invalid usage. See '${WOK_COMMAND} mongodb --help'."
+				wok_error "Invalid usage. See '${WOK_COMMAND} mongodb --help'."
 				wok_exit $EXIT_ERR_USR
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
@@ -284,7 +284,7 @@ wok_mongodb_handle()
 
 		remove|rm)
 			if [[ ${#args_remain[@]} -ne 1 ]]; then
-				wok_perror "Invalid usage. See '${WOK_COMMAND} mongodb --help'."
+				wok_error "Invalid usage. See '${WOK_COMMAND} mongodb --help'."
 				wok_exit $EXIT_ERR_USR
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
@@ -299,7 +299,7 @@ wok_mongodb_handle()
 			return $?;;
 
 		*)
-			wok_perror "Invalid usage. See '${WOK_COMMAND} mongodb --help'."
+			wok_error "Invalid usage. See '${WOK_COMMAND} mongodb --help'."
 			wok_exit $EXIT_ERR_USR;;
 
 	esac

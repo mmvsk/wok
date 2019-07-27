@@ -93,25 +93,35 @@ wok_exit()
 		"$callback" $exit_status
 	done
 
-	[[ -n $message ]] && wok_perror "$message"
+	[[ -n $message ]] && wok_error "$message"
 
 	exit $exit_status
 }
 
 #
-# Print an error message and exit
+# Print an error message
 #
-wok_perror()
+wok_error()
 {
 	local message="$1"
 
-	echo "$message" >&2
+	echo -e "\e[41;30m error \e[0m $message" >&2
+}
+
+#
+# Print a warning message
+#
+wok_warn()
+{
+	local message="$1"
+
+	echo -e "\e[43;30m warning \e[0m $message" >&2
 }
 
 #
 # Print the usage of the command-line interface
 #
-wok_pusage()
+wok_usage()
 {
 	local module
 	local module_descr
@@ -152,7 +162,7 @@ wok_handle()
 	local module
 
 	if [[ -z "$*" ]]; then
-		wok_pusage
+		wok_usage
 		wok_exit $EXIT_ERR_USR
 	fi
 
@@ -162,7 +172,7 @@ wok_handle()
 		case "$arg" in
 
 			-h|--help)
-				wok_pusage
+				wok_usage
 				wok_exit $EXIT_OK;;
 
 			-v|--version)
@@ -172,7 +182,7 @@ wok_handle()
 			help)
 				shift
 				if [[ -z "$1" ]]; then
-					wok_perror "Invalid usage of 'help'."
+					wok_error "Invalid usage of 'help'."
 					wok_exit $EXIT_ERR_USR
 				fi
 				case "$1" in
@@ -185,7 +195,7 @@ wok_handle()
 							wok_exit $EXIT_OK
 						fi;;
 				esac
-				wok_perror "No available help for '$1'."
+				wok_error "No available help for '$1'."
 				wok_exit $EXIT_ERR_USR;;
 
 			add)
@@ -208,7 +218,7 @@ wok_handle()
 				module="$(echo "$arg" | sed -e 's/[ \-]/_/g')"
 
 				if ! wok_module_has "$module"; then
-					wok_perror "${WOK_NAME}: '${arg}' is not a valid command. See '${WOK_COMMAND} --help'."
+					wok_error "${WOK_NAME}: '${arg}' is not a valid command. See '${WOK_COMMAND} --help'."
 					wok_exit $EXIT_ERR_USR
 				fi
 

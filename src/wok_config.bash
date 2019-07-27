@@ -24,7 +24,7 @@ wok_config_get()
 	local key="$2"
 
 	if ! ini_get "$WOK_CONFIG_FILE" "$section" "$key" 2>/dev/null; then
-		wok_perror "Could not load configuration value '${section}:${key}' from file '${WOK_CONFIG_FILE}'"
+		wok_error "Could not load configuration value '${section}:${key}' from file '${WOK_CONFIG_FILE}'"
 		wok_exit $EXIT_ERR_SYS
 	fi
 }

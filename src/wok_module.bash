@@ -42,12 +42,12 @@ wok_module_describe()
 	local description
 
 	if ! wok_module_has "$module"; then
-		wok_perror "Unavailable module: ${module}"
+		wok_error "Unavailable module: ${module}"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	if ! description="$("$handler")"; then
-		wok_perror "Module error"
+		wok_error "Module error"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -65,12 +65,12 @@ wok_module_pdeps()
 	local deps
 
 	if ! wok_module_has "$module"; then
-		wok_perror "Unavailable module: ${module}"
+		wok_error "Unavailable module: ${module}"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	if ! deps="$("$handler")"; then
-		wok_perror "Module error"
+		wok_error "Module error"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -87,12 +87,12 @@ wok_module_pname()
 	local name
 
 	if ! wok_module_has "$module"; then
-		wok_perror "Unavailable module: ${module}"
+		wok_error "Unavailable module: ${module}"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	if ! name="$("$handler")"; then
-		wok_perror "Module error"
+		wok_error "Module error"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -110,12 +110,12 @@ wok_module_handle()
 	local param=("$@")
 
 	if ! wok_module_has "$module"; then
-		wok_perror "Unavailable module: ${module}"
+		wok_error "Unavailable module: ${module}"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	if ! "$handler" "${param[@]}"; then
-		wok_perror "Module error"
+		wok_error "Module error"
 		wok_exit $EXIT_ERR_SYS
 	fi
 }
@@ -164,7 +164,7 @@ wok_module_resolveDeps()
 
 		__ordered_n=${#__ordered[@]}
 		if [[ $__i -eq $__ordered_n ]]; then
-			wok_perror "Could not resolve module dependency."
+			wok_error "Could not resolve module dependency."
 			wok_exit $EXIT_ERR_SYS
 		fi
 		__i=$__ordered_n
