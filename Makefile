@@ -202,7 +202,7 @@ dist/repo:
 
 dist/wok/wok.elf: dist/wok/wok.bash
 	$(call task, "Compiling dist/wok/wok.elf", \
-		shc -r -T -f dist/wok/wok.bash;          \
+		shc -r -f dist/wok/wok.bash;          \
 		mv dist/wok/wok.bash.x dist/wok/wok.elf; \
 		rm -f dist/wok/wok.bash.x.c || true;     \
 	, true)

@@ -91,37 +91,37 @@ wok_www_add()
 	local php_fpm_pool_path
 
 	if ! wok_repo_has "$domain"; then
-		wok_perror "Domain '${domain}' is not managed by Wok."
+		wok_error "Domain '${domain}' is not managed by Wok."
 		wok_exit $EXIT_ERR_USR
 	fi
 
 	if wok_www_has "$domain"; then
-		wok_perror "Domain '${domain}' is already bound to 'www' module."
+		wok_error "Domain '${domain}' is already bound to 'www' module."
 		wok_exit $EXIT_ERR_USR
 	fi
 
 	# Generate system UID
 	uid_index="$(wok_repo_module_index_getPath www uid)"
 	if ! uid="$(str_slugify "$domain" 32 "www-" "$uid_index")"; then
-		wok_perror "Could not create a slug for '${domain}'"
+		wok_error "Could not create a slug for '${domain}'"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	# Verify base paths
 	if [[ ! -d "$home_path_base" || ! -w "$home_path_base" ]]; then
-		wok_perror "Home base directory '${home_path_base}' does not exist or is not writable."
+		wok_error "Home base directory '${home_path_base}' does not exist or is not writable."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if [[ ! -d "$www_path_base" || ! -w "$www_path_base" ]]; then
-		wok_perror "Www base directory '${www_path_base}' does not exist or is not writable."
+		wok_error "Www base directory '${www_path_base}' does not exist or is not writable."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if [[ ! -d "$nginx_vhost_conf_dir" || ! -w "$nginx_vhost_conf_dir" ]]; then
-		wok_perror "Nginx vhost configuration directory '${nginx_vhost_conf_dir}' does not exist or is not writable."
+		wok_error "Nginx vhost configuration directory '${nginx_vhost_conf_dir}' does not exist or is not writable."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if [[ ! -d "$php_fpm_pool_dir" || ! -w "$php_fpm_pool_dir" ]]; then
-		wok_perror "PHP FPM pool directory '${php_fpm_pool_dir}' does not exist or is not writable."
+		wok_error "PHP FPM pool directory '${php_fpm_pool_dir}' does not exist or is not writable."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -134,43 +134,43 @@ wok_www_add()
 
 	# Verify templates existence
 	if [[ ! -e "$home_template" ]]; then
-		wok_perror "Home template '${home_template}' does not exist."
+		wok_error "Home template '${home_template}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if [[ ! -e "$www_template" ]]; then
-		wok_perror "Www template '${www_template}' does not exist."
+		wok_error "Www template '${www_template}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if [[ ! -e "$nginx_vhost_conf_template" ]]; then
-		wok_perror "Nginx vhost configuration template '${nginx_vhost_conf_template}' does not exist."
+		wok_error "Nginx vhost configuration template '${nginx_vhost_conf_template}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if [[ ! -e "$php_fpm_pool_template" ]]; then
-		wok_perror "PHP FPM pool template '${php_fpm_pool_template}' does not exist."
+		wok_error "PHP FPM pool template '${php_fpm_pool_template}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	# Verify paths availability
 	if [[ -e $home_path ]]; then
-		wok_perror "Home directory '${home_path}' already exists."
+		wok_error "Home directory '${home_path}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if [[ -e $www_path ]]; then
-		wok_perror "Www directory '${www_path}' already exists."
+		wok_error "Www directory '${www_path}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if [[ -e $nginx_vhost_conf_path ]]; then
-		wok_perror "Nginx vhost configuration file '${nginx_vhost_conf_path}' already exists."
+		wok_error "Nginx vhost configuration file '${nginx_vhost_conf_path}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if [[ -e $php_fpm_pool_path ]]; then
-		wok_perror "PHP FPM pool file '${php_fpm_pool_path}' already exists."
+		wok_error "PHP FPM pool file '${php_fpm_pool_path}' already exists."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	# Create system user
 	if ! useradd -g "$user_gid" -d "$home_path" -s "$user_shell" "$uid"; then
-		wok_perror "Could not create system user '${uid}'."
+		wok_error "Could not create system user '${uid}'."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -178,7 +178,7 @@ wok_www_add()
 	umask_prev="$(umask)"
 	umask "$(wok_config_get wok_www www_umask)"
 	if ! cp -r "$www_template" "$www_path"; then
-		wok_perror "Could not create www directory '${www_path}'."
+		wok_error "Could not create www directory '${www_path}'."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	chown -R "${uid}:${user_gid}" "$www_path"
@@ -188,7 +188,7 @@ wok_www_add()
 	umask_prev="$(umask)"
 	umask "$(wok_config_get wok_www home_umask)"
 	if ! cp -r "$home_template" "$home_path"; then
-		wok_perror "Could not create home directory '${home_path}'."
+		wok_error "Could not create home directory '${home_path}'."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	ln -s "$www_path" "${home_path}/www"
@@ -215,7 +215,7 @@ wok_www_add()
 
 	# Reload PHP and Nginx daemons
 	$php_daemon_command_reload
-	$nginx_daemon_command_reload
+	nginx -t 2>/dev/null && $nginx_daemon_command_reload || wok_warn "nginx error, service not reloaded, see \`nginx -t\`"
 }
 
 wok_www_has()
@@ -240,7 +240,7 @@ wok_www_remove()
 	local nginx_vhost_conf_dir="$(wok_config_get wok_www nginx_vhost_conf_dir)"
 
 	if ! wok_www_has "$domain"; then
-		wok_perror "Domain '${domain}' is not bound to 'www' module."
+		wok_error "Domain '${domain}' is not bound to 'www' module."
 		wok_exit $EXIT_ERR_USR
 	fi
 
@@ -253,24 +253,24 @@ wok_www_remove()
 	local php_daemon_command_reload=$(wok_config_get wok_www php_daemon_command_reload)
 
 	if ! egrep -q "^${uid}:" /etc/passwd; then
-		wok_perror "System user '${uid}' does not exist on this host."
+		wok_error "System user '${uid}' does not exist on this host."
 		wok_exit $EXIT_ERR_SYS
 	fi
 
 	if [[ ! -d $home_path ]]; then
-		wok_perror "Home directory '${home_path}' does not exist."
+		wok_error "Home directory '${home_path}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if [[ ! -d $www_path ]]; then
-		wok_perror "WWW directory '${www_path}' does not exist."
+		wok_error "WWW directory '${www_path}' does not exist."
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if [[ ! -f $nginx_vhost_conf_path || ! -w $nginx_vhost_conf_path ]]; then
-		wok_perror "Nginx vhost configuration file '${nginx_vhost_conf_path}' does not exist or is not deletable (writable)"
+		wok_error "Nginx vhost configuration file '${nginx_vhost_conf_path}' does not exist or is not deletable (writable)"
 		wok_exit $EXIT_ERR_SYS
 	fi
 	if [[ ! -f $php_fpm_pool_path || ! -w $php_fpm_pool_path ]]; then
-		wok_perror "PHP FPM pool file '${php_fpm_pool_path}' does not exist or is not deletable (writable)"
+		wok_error "PHP FPM pool file '${php_fpm_pool_path}' does not exist or is not deletable (writable)"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -279,12 +279,12 @@ wok_www_remove()
 	rm -f "$php_fpm_pool_path"
 
 	# Reload PHP and Nginx daemons
-	$nginx_daemon_command_reload
+	nginx -t 2>/dev/null && $nginx_daemon_command_reload || wok_warn "nginx error, service not reloaded, see \`nginx -t\`"
 	$php_daemon_command_reload
 
 	# Remove system user
 	if ! userdel -f "$uid"; then
-		wok_perror "Error deleting system user '${uid}'"
+		wok_error "Error deleting system user '${uid}'"
 		wok_exit $EXIT_ERR_SYS
 	fi
 
@@ -304,7 +304,7 @@ wok_www_getUid()
 	local domain="$1"
 
 	if ! wok_www_has "$domain"; then
-		wok_perror "Domain ${domain} is not managed by 'www' module."
+		wok_error "Domain ${domain} is not managed by 'www' module."
 		wok_exit $WOK_ERR_SYS
 	fi
 
@@ -316,7 +316,7 @@ wok_www_getGid()
 	local domain="$1"
 
 	if ! wok_www_has "$domain"; then
-		wok_perror "Domain ${domain} is not managed by 'www' module."
+		wok_error "Domain ${domain} is not managed by 'www' module."
 		wok_exit $WOK_ERR_SYS
 	fi
 
@@ -328,7 +328,7 @@ wok_www_getWwwPath()
 	local domain="$1"
 
 	if ! wok_www_has "$domain"; then
-		wok_perror "Domain ${domain} is not managed by 'www' module."
+		wok_error "Domain ${domain} is not managed by 'www' module."
 		wok_exit $WOK_ERR_SYS
 	fi
 
@@ -340,7 +340,7 @@ wok_www_getHomePath()
 	local domain="$1"
 
 	if ! wok_www_has "$domain"; then
-		wok_perror "Domain ${domain} is not managed by 'www' module."
+		wok_error "Domain ${domain} is not managed by 'www' module."
 		wok_exit $WOK_ERR_SYS
 	fi
 
@@ -353,7 +353,7 @@ wok_www_getModuleRcPath()
 	local module="$2" # Facultative
 
 	if ! wok_www_has "$domain"; then
-		wok_perror "Domain ${domain} is not managed by 'www' module."
+		wok_error "Domain ${domain} is not managed by 'www' module."
 		wok_exit $WOK_ERR_SYS
 	fi
 
@@ -373,7 +373,7 @@ wok_www_getPassword()
 	local domain="$1"
 
 	if ! wok_www_has "$domain"; then
-		wok_perror "Domain ${domain} is not managed by 'www' module."
+		wok_error "Domain ${domain} is not managed by 'www' module."
 		wok_exit $WOK_ERR_SYS
 	fi
 
@@ -407,7 +407,7 @@ wok_www_createSsl()
 	local nginx_ssl_cer_path="${nginx_ssl_dir}/${domain}.cer"
 
 	if ! wok_www_has "$domain"; then
-		wok_perror "Domain '${domain}' is not bound to 'www' module."
+		wok_error "Domain '${domain}' is not bound to 'www' module."
 		wok_exit $EXIT_ERR_USR
 	fi
 
@@ -427,7 +427,7 @@ wok_www_createSsl()
 			|| [[ -f $nginx_ssl_csr_path && ! -w $nginx_ssl_csr_path ]] \
 			|| [[ -f $nginx_ssl_cer_path && ! -w $nginx_ssl_cer_path ]] \
 		; then
-			wok_perror "A certificate file already exist but is not deletable (writable)"
+			wok_error "A certificate file already exist but is not deletable (writable)"
 			wok_exit $EXIT_ERR_SYS
 		fi
 	fi
@@ -477,11 +477,11 @@ wok_www_handle()
 
 			-p*|--password=*)
 				if ! passwd="$(arg_parseValue "$arg")"; then
-					wok_perror "Invalid usage."
+					wok_error "Invalid usage."
 					wok_exit $EXIT_ERR_USR
 				fi
 				if ! [[ $passwd =~ $WOK_PASSWD_PATTERN ]]; then
-					wok_perror "The password must match the following pattern: ${WOK_PASSWD_PATTERN}"
+					wok_error "The password must match the following pattern: ${WOK_PASSWD_PATTERN}"
 					wok_exit $EXIT_ERR_USR
 				fi;;
 
@@ -493,15 +493,15 @@ wok_www_handle()
 
 			--report-log=*)
 				if ! arg_value="$(arg_parseValue "$arg")"; then
-					wok_perror "Invalid usage."
+					wok_error "Invalid usage."
 					wok_exit $EXIT_ERR_USR
 				fi
 				if ! [[ $arg_value =~ $WOK_LOG_PATTERN ]]; then
-					wok_perror "The log file must be located in a temp directory."
+					wok_error "The log file must be located in a temp directory."
 					wok_exit $EXIT_ERR_USR
 				fi
 				if [[ ! -f $arg_value ]]; then
-					wok_perror "The log file must already be created."
+					wok_error "The log file must already be created."
 					wok_exit $EXIT_ERR_USR
 				fi
 				report_log="$arg_value";;
@@ -516,7 +516,7 @@ wok_www_handle()
 
 	# At least one argument is required: the action to perform
 	if [[ ${#args_remain[@]} -lt 1 ]]; then
-		wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+		wok_error "Invalid usage. See '${WOK_COMMAND} www --help'."
 		wok_exit $EXIT_ERR_USR
 	fi
 
@@ -527,13 +527,13 @@ wok_www_handle()
 
 		add)
 			if [[ ${#args_remain[@]} -ne 1 ]]; then
-				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_error "Invalid usage. See '${WOK_COMMAND} www --help'."
 				wok_exit $EXIT_ERR_USR
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
 
 			if $with_ssl && ! $interactive; then
-				wok_perror "Can't create an SSL certificate signing request in non-interactive mode"
+				wok_error "Can't create an SSL certificate signing request in non-interactive mode"
 				wok_exit $EXIT_ERR_USR
 			fi
 
@@ -560,7 +560,7 @@ wok_www_handle()
 
 		remove|rm)
 			if [[ ${#args_remain[@]} -ne 1 ]]; then
-				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_error "Invalid usage. See '${WOK_COMMAND} www --help'."
 				wok_exit $EXIT_ERR_USR
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
@@ -576,13 +576,13 @@ wok_www_handle()
 
 		create-ssl)
 			if [[ ${#args_remain[@]} -ne 1 ]]; then
-				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_error "Invalid usage. See '${WOK_COMMAND} www --help'."
 				wok_exit $EXIT_ERR_USR
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
 
 			if ! $interactive; then
-				wok_perror "Can't create an SSL certificate signing request in non-interactive mode"
+				wok_error "Can't create an SSL certificate signing request in non-interactive mode"
 				wok_exit $EXIT_ERR_USR
 			fi
 
@@ -590,13 +590,13 @@ wok_www_handle()
 
 		edit-nginx)
 			if [[ ${#args_remain[@]} -ne 1 ]]; then
-				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_error "Invalid usage. See '${WOK_COMMAND} www --help'."
 				wok_exit $EXIT_ERR_USR
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
 
 			if ! wok_www_has "$domain"; then
-				wok_perror "Domain '${domain}' is not bound to 'www' module."
+				wok_error "Domain '${domain}' is not bound to 'www' module."
 				wok_exit $EXIT_ERR_USR
 			fi
 
@@ -604,17 +604,17 @@ wok_www_handle()
 			local nginx_daemon_command_reload=$(wok_config_get wok_www nginx_daemon_command_reload)
 
 			$EDITOR "${nginx_vhost_conf_dir}/${domain}.conf" -c "setf nginx"
-			ui_showProgress "Reloading nginx" $nginx_daemon_command_reload;;
+			nginx -t 2>/dev/null && (ui_showProgress "Reloading nginx" $nginx_daemon_command_reload) || wok_warn "nginx error, service not reloaded, see \`nginx -t\`";;
 
 		edit-php)
 			if [[ ${#args_remain[@]} -ne 1 ]]; then
-				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_error "Invalid usage. See '${WOK_COMMAND} www --help'."
 				wok_exit $EXIT_ERR_USR
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
 
 			if ! wok_www_has "$domain"; then
-				wok_perror "Domain '${domain}' is not bound to 'www' module."
+				wok_error "Domain '${domain}' is not bound to 'www' module."
 				wok_exit $EXIT_ERR_USR
 			fi
 
@@ -627,13 +627,13 @@ wok_www_handle()
 
 		su)
 			if [[ ${#args_remain[@]} -ne 1 ]]; then
-				wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+				wok_error "Invalid usage. See '${WOK_COMMAND} www --help'."
 				wok_exit $EXIT_ERR_USR
 			fi
 			array_shift args_remain domain || wok_exit $EXIT_ERR_SYS
 
 			if ! wok_www_has "$domain"; then
-				wok_perror "Domain '${domain}' is not bound to 'www' module."
+				wok_error "Domain '${domain}' is not bound to 'www' module."
 				wok_exit $EXIT_ERR_USR
 			fi
 
@@ -641,7 +641,7 @@ wok_www_handle()
 			su - "$uid";;
 
 		*)
-			wok_perror "Invalid usage. See '${WOK_COMMAND} www --help'."
+			wok_error "Invalid usage. See '${WOK_COMMAND} www --help'."
 			wok_exit $EXIT_ERR_USR;;
 
 	esac
