@@ -102,7 +102,7 @@ wok_www_add()
 
 	# Generate system UID
 	uid_index="$(wok_repo_module_index_getPath www uid)"
-	if ! uid="$(str_slugify "$domain" 32 "www-" "$uid_index")"; then
+	if ! uid="$(str_slugify "$domain" 32 "www_" "$uid_index")"; then
 		wok_error "Could not create a slug for '${domain}'"
 		wok_exit $EXIT_ERR_SYS
 	fi

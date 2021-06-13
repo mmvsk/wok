@@ -20,8 +20,7 @@
 
 WOK_DOMAIN_PATTERN='^[[:alnum:]]+([.\-][[:alnum:]]+)*$'
 WOK_PASSWD_PATTERN='^[[:alnum:]]{8,64}$'
-WOK_PASSWD_LENGTH=16
-WOK_PASSWD_CMD="pwgen -s $WOK_PASSWD_LENGTH 1"
+WOK_PASSWD_LENGTH=24
 WOK_LOG_ENABLE=false
 WOK_LOG_PATTERN="^/tmp/"
 
@@ -181,10 +180,10 @@ wok_add()
 		#if $interactive && ! ui_confirm "Generate a global password?"; then
 			#ui_getPasswd passwd "$WOK_PASSWD_PATTERN"
 		#else
-			#passwd="$($WOK_PASSWD_CMD)"
+			#passwd="$(passwd)"
 		#fi
 	#fi
-	passwd="$($WOK_PASSWD_CMD)"
+	passwd="$(passwd)"
 
 	# Determine report recipients
 	#if [[ ${#report_to[@]} -lt 1 ]] && $interactive; then

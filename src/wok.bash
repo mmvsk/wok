@@ -103,9 +103,7 @@ wok_exit()
 #
 wok_error()
 {
-	local message="$1"
-
-	echo -e "\e[41;30m error \e[0m $message" >&2
+	echo "$(color "red bold dim invert" " error ") $1" >&2
 }
 
 #
@@ -113,9 +111,7 @@ wok_error()
 #
 wok_warn()
 {
-	local message="$1"
-
-	echo -e "\e[43;30m warning \e[0m $message" >&2
+	echo "$(color "yellow bold dim invert" " warning ") $1" >&2
 }
 
 #
@@ -155,7 +151,7 @@ wok_usage()
 #
 # Handle the command-line call
 #
-wok_handle()
+wok_main()
 {
 	local arg
 	local arg_value
@@ -234,4 +230,4 @@ wok_handle()
 #-----------------------------------------------------------------------
 
 # Execute wok!
-wok_handle "$@"
+wok_main "$@"
