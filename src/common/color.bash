@@ -6,10 +6,6 @@
 # Usage #1: echo "Hello world!" | color green
 # Usage #2: echo "$(color brown 'John')> Hi!"
 
-#exinfo_interactive() {
-	#[[ -t 0 ]]
-#}
-
 color() {
 	local color="$1"
 	local message="$2"
