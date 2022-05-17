@@ -6,6 +6,10 @@
 # Usage #1: echo "Hello world!" | color green
 # Usage #2: echo "$(color brown 'John')> Hi!"
 
+#exinfo_interactive() {
+	#[[ -t 0 ]]
+#}
+
 color() {
 	local color="$1"
 	local message="$2"
@@ -15,7 +19,7 @@ color() {
 	fi
 
 	# skip coloring if it's not interactive
-	if !exinfo_interactive; then
+	if ! [[ -t 0 ]]; then
 		echo "$message"
 		return 0
 	fi
