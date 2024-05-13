@@ -15,7 +15,8 @@ _wok() {
 					_arguments "2:a2:(list add remove mysql postgres mongodb www)"
 					;;
 				www)
-					_arguments "2:a2:(su edit-nginx edit-php create-ssl add ls list rm remove)"
+					#_arguments "2:a2:(su edit-nginx edit-php create-ssl add ls list rm remove)"
+					_arguments "2:a2:(su edit-nginx add ls list rm remove)"
 					;;
 			esac
 			;;
@@ -27,7 +28,8 @@ _wok() {
 							#_files -g "*.conf(:r)" -P "-i " -S " " -W /etc/nginx/vhosts
 							_files -g "*.conf(:r)" -S " -i " -W /etc/nginx/vhosts
 							;;
-						su|edit-nginx|edit-php|create-ssl|rm|remove)
+						#su|edit-nginx|edit-php|create-ssl|rm|remove)
+						su|edit-nginx|rm|remove)
 							_files -g "*.conf(:r)" -S " " -W /etc/nginx/vhosts
 							;;
 					esac
